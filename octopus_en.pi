@@ -1,0 +1,67 @@
+/* Janko Naoki Octopus (scc + tree)
+If 1|1 is no circle, line 28 must be updated!
+https://www.janko.at/Raetsel/Naoki/Octopus.htm */
+import util, sat.
+main =>	
+    No = {{1,2,0,3}, 
+          {0,0,2,0},
+          {0,1,0,0},
+          {1,0,3,1}}, N = len(No),
+    Vs = [{(R,C), _} : R in 1..N, C in 1..N], 
+    VMap = new_map(), foreach ({(R,C),B} in Vs) VMap.put({R,C}, B) end,
+    % The edges are undirected:
+    Es = [{(R,C), (R1,C1), _} : {(R,C),_} in Vs, (R1,C1) in [(R,C+1), (R+1,C), (R+1,C+1), (R+1,C-1)], R1=<N, 0<C1, C1=<N], 
+    EMap = new_map(), foreach({(R1,C1),(R2,C2),B} in Es) 
+        EMap.put({R1,C1,R2,C2}, B), EMap.put({R2,C2,R1,C1}, B) % edge > <=> edge <
+    end,
+    % The number in a circle indicates how many lines ends there:
+    foreach({(R,C), B} in Vs, No[R,C] > 0)
+        VMap.get({R,C}) #= 1,
+        No[R,C] #= sum([EMap.get({R,C, R1,C1}, 0) : R1 in R-1..R+1, C1 in C-1..C+1, (R1,C1)!=(R,C)])
+    end,
+    foreach({(R,C), B} in Vs)
+        EMap.get({R,C, R+1,C+1}, 0) + EMap.get({R,C+1, R+1,C}, 0) #< 2 % / and \ do not cross!
+    end,
+    scc(Vs, Es), % the vertices in Vs are connected by the undirected edges in Es
+    % Loop free; in other words: the grapph is a tree (non-root vertices have exactly one predecessor)
+    D = new_array(N,N), Dmax = N*N, D :: 0..Dmax, % D[R,C] = depth of R|C in the tree
+    Rr = 1, Cr = 1, D[Rr,Cr] #= 0, % Root = 1|1
+    foreach(R in 1..N, C in 1..N, (R,C)!=(Rr,Cr))
+        VMap.get({R,C}) #= 0 #<=> D[R,C] #= Dmax, % Vertices not included to the graph have depth "infinity" (here we use Dmax to denote this)
+        Rv :: R-1..R+1, Cv :: C-1..C+1, Rv #!= R #\/ Cv #!= C, % predecessor
+        matrix_element(D, Rv,Cv, Dv), 
+        D[R,C] #= Dmax #\/ D[R,C] #= Dv + 1, % my tree depth = predecessor depth + 1
+        foreach(Rn in R-1..R+1, Cn in C-1..C+1, (Rn,Cn)!=(R,C), 0<Rn, Rn=<N, 0<Cn, Cn=<N) % all othe neighbors are sucessors:
+            ( EMap.get({R,C, Rn,Cn}, 0) #= 1 #/\ (Rn #!= Rv #\/ Cn #!= Cv) ) #=> D[Rn,Cn] #> D[R,C] 
+        end
+    end,
+    foreach({(R,C), _} in Vs, No[R,C] = 0) % for non-circle fields count the edges of R|C:
+        Cnt #= sum([EMap.get({R,C, R1,C1}, 0) : R1 in R-1..R+1, C1 in C-1..C+1, (R1,C1)!=(R,C)]),
+        Cnt :: [0,2], % non open ends, no T- oder X-crossings
+        EMap.get({R,C, R,C-1}, 0)   #= EMap.get({R,C, R,C+1}, 0),   % edge left <=> edge right
+        EMap.get({R,C, R-1,C}, 0)   #= EMap.get({R,C, R+1,C}, 0),   % edge up <=> edge down
+        EMap.get({R,C, R-1,C-1}, 0) #= EMap.get({R,C, R+1,C+1}, 0), % 0 or 2 \-edges
+        EMap.get({R,C, R-1,C+1}, 0) #= EMap.get({R,C, R+1,C-1}, 0)  % 0 or 2 /-edges
+    end,    
+    solve(vars(Vs) ++ vars(Es) ++ vars(D)), ChrH = " -", ChrV = " |", ChrD = " \\/X",
+    foreach(R in 1..N)
+        foreach(C in 1..N)
+            CK = cond(No[R,C] > 0, chr(48+No[R,C]), cond(VMap.get({R,C}) = 1, '*', ' ') ),
+            CH = cond(C < N, ChrH[1+EMap.get({R,C, R,C+1})], ' '),
+            printf("%c%c", CK, CH)
+        end, nl,
+        if R < N then 
+            foreach(C in 1..N) 
+                printf("%c%c", ChrV[1+EMap.get({R,C, R+1,C})], 
+                               ChrD[1+EMap.get({R,C, R+1,C+1}, 0)+2*EMap.get({R,C+1, R+1,C}, 0)])
+            end, nl 
+        end
+    end. /*
+1-2-*-3 
+     /| 
+    2 * 
+    | | 
+  1 * * 
+   \| | 
+1-*-3 1 
+CPU time 0.439 seconds, correct! */

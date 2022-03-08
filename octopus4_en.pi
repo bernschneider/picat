@@ -1,6 +1,6 @@
 /* Janko Naoki Octopus Nr. 4
 https://www.janko.at/Raetsel/Naoki/Octopus.htm */
-import util, sat.
+import util, sat, tree.
 main =>	
     No = {{_,0,0,_, 0,0,0, 4,0,0,_}, 
           {0,0,2,0, 0,0,0, 0,3,0,0},
@@ -30,7 +30,7 @@ main =>
     foreach({(R,C), B} in Vs)
         EMap.get({R,C, R+1,C+1}, 0) + EMap.get({R,C+1, R+1,C}, 0) #< 2 % / and \ don´t cross!
     end,
-    scc(Vs, Es),  % the vertices in Vs are connected by the undirected edges in Es
+    tree(Vs, Es),  % the vertices in Vs are connected by the undirected edges in Es
     foreach({(R,C), _} in Vs, ground(No[R,C]), No[R,C] = 0) % for non-circle fields count the edges of R|C:
         Cnt #= sum([EMap.get({R,C, R1,C1}, 0) : R1 in R-1..R+1, C1 in C-1..C+1, (R1,C1)!=(R,C)]),
         Cnt :: [0,2], % non open ends, no T- oder X-crossings
@@ -54,17 +54,17 @@ main =>
         end
     end. /*
 X     X-*-*-*-4-*-*-X 
-|    /|       |\      
-*   2 *       * 3     
-|   | |       | |\    
-* X * * X-*-2 * * 2   
-|/  | | |   | | |  \  
-3   * 1 *   * 1 *   X 
-|   |   |   |   |   | 
-*   3   * 2 *   X   * 
-|   |\  |/| |       | 
-*   * * X * 1       * 
-|   |  \ \|         | 
+|    /        |\      
+*   2         * 3     
+|  /          | |\    
+* X-*-*-X-*-2 * * 2   
+|           | | |  \  
+3-*-*-1     * 1 *   X 
+|           |   |   | 
+*   3-*-*-2 *   X   * 
+|   |\   /  |       | 
+*   * * X   1       * 
+|   |  \            | 
 *   1   * X-*-*-2   * 
 |        \     /    | 
 3-*-*-2   *   2     3 
@@ -72,6 +72,6 @@ X     X-*-*-*-4-*-*-X
 * X-*-*-3-*-4-*-*-2 * 
 |  \                | 
 *   3-*-*-*-*-*-X   * 
-|    \         /    | 
-X     2-*-*-*-X-*-*-X 
-CPU time 0.076 seconds, korrekt */
+|    \              | 
+X     2-*-*-*-X     X 
+CPU time 0.064 seconds, correkt */

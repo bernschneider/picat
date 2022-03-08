@@ -1,0 +1,63 @@
+/*
+  Usage: tree(Vs, Es)
+  Meaning: Constrain the eddges of Es to span a tree over the vertices in Vs
+  by Neng-Fa Zhou.
+*/
+module tree.
+
+import sat.
+
+tree(Vs,Es) =>
+    tree(Vs,Es,_).
+
+tree(Vs,Es,K) =>
+    VNumMap = new_map(),
+    hcp_scc_check_vs(Vs,1,N,VNumMap,Bs,0,NZeros,0,MinK,tree),
+    AdjMap = new_map(),
+    A = to_array(Bs),
+    sum(Bs) #= K,
+    scc_check_es(A,N,Es,VNumMap,AdjMap,tree),
+    tree_aux(A,N,K,AdjMap,NZeros,MinK).
+
+tree_aux(A,N,K,AdjMap,NZeros,MinK) =>
+    MaxK = max(N-NZeros,1),
+    K :: MinK..MaxK,
+    (MinK > 1 ->
+        KGt1 = 1
+    ;
+        KGt1 #<=> (K #> 1)
+    ),
+    hcp_scc_choose_start(A,N,KGt1,MinK,Start),     % Start[I] = 1 iff vertex I is the root of the tree
+    DistA = new_array(N),
+    MaxDist = MaxK-1,
+    DistA :: 0..MaxDist,
+    PMatrix = new_array(N,N),                       % PMatrix[I,J] = 1 iff I is the parent of J in the spanning tree
+    foreach (I in 1..N)
+        Neibs = AdjMap.get(I,[]),
+        foreach ({J,_B,P} in Neibs)
+            PMatrix[I,J] = P
+        end
+    end,
+    foreach (I in 1..N)
+        if A[I] == 0 then
+            DistA[I] = 0
+        else
+            Neibs = AdjMap.get(I,[]),
+            if Start[I] == 1 then                  % I has been set to be the root
+                DistA[I] = 0,
+                foreach ({J,B,P} in Neibs)
+                    B #=> DistA[J] #= 1,
+                    B #=> A[J],
+                    P = 0
+                end
+            else
+                Start[I] #=> DistA[I] #= 0,
+                Start[I] #=> sum([P : {_,_,P} in Neibs]) #= 0,
+                #~Start[I] #/\ A[I] #=> sum([P : {_,_,P} in Neibs]) #= 1,
+                foreach ({J,B,P} in Neibs)
+                    P #=> DistA[I] #= DistA[J]+1,
+                    B #=> PMatrix[I,J] #\/ PMatrix[J,I]   % if (I,J) is in, then either is the parent of the other
+                end
+            end
+        end
+    end.

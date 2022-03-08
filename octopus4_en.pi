@@ -2,17 +2,17 @@
 https://www.janko.at/Raetsel/Naoki/Octopus.htm */
 import util, sat, tree.
 main =>	
-    No = {{_,0,0,_, 0,0,0, 4,0,0,_}, 
+    No = {{9,0,0,9, 0,0,0, 4,0,0,9}, 
           {0,0,2,0, 0,0,0, 0,3,0,0},
-          {0,_,0,0, _,0,2, 0,0,2,0},
-          {3,0,0,1, 0,0,0, 1,0,0,_},
-          {0,0,3,0, 0,2,0, 0,_,0,0},
-          {0,0,0,0, _,0,1, 0,0,0,0},
-          {0,0,1,0, 0,_,0, 0,2,0,0},
+          {0,9,0,0, 9,0,2, 0,0,2,0},
+          {3,0,0,1, 0,0,0, 1,0,0,9},
+          {0,0,3,0, 0,2,0, 0,9,0,0},
+          {0,0,0,0, 9,0,1, 0,0,0,0},
+          {0,0,1,0, 0,9,0, 0,2,0,0},
           {3,0,0,2, 0,0,0, 2,0,0,3},
-          {0,_,0,0, 3,0,4, 0,0,2,0},
-          {0,0,3,0, 0,0,0, 0,_,0,0},
-          {_,0,0,2, 0,0,0, _,0,0,_}}, N = len(No),
+          {0,9,0,0, 3,0,4, 0,0,2,0},
+          {0,0,3,0, 0,0,0, 0,9,0,0},
+          {9,0,0,2, 0,0,0, 9,0,0,9}}, N = len(No),
     Vs = [{(R,C), _} : R in 1..N, C in 1..N], 
     VMap = new_map(), foreach ({(R,C),B} in Vs) VMap.put({R,C}, B) end,
     % The edges are undirected:
@@ -21,9 +21,9 @@ main =>
         EMap.put({R1,C1,R2,C2}, B), EMap.put({R2,C2,R1,C1}, B) % edge > <=> edge <
     end,
     % The number in a circle indicates how many lines ends there:
-    foreach({(R,C), B} in Vs, (var(No[R,C]); No[R,C] > 0))
+    foreach({(R,C), B} in Vs, 0 < No[R,C])
         VMap.get({R,C}) = 1,
-        if ground(No[R,C]) then
+        if No[R,C] < 9 then
             No[R,C] #= sum([EMap.get({R,C, R1,C1}, 0) : R1 in R-1..R+1, C1 in C-1..C+1, (R1,C1)!=(R,C)])
         end
     end,
@@ -31,7 +31,7 @@ main =>
         EMap.get({R,C, R+1,C+1}, 0) + EMap.get({R,C+1, R+1,C}, 0) #< 2 % / and \ don´t cross!
     end,
     tree(Vs, Es),  % the vertices in Vs are connected by the undirected edges in Es
-    foreach({(R,C), _} in Vs, ground(No[R,C]), No[R,C] = 0) % for non-circle fields count the edges of R|C:
+    foreach({(R,C), _} in Vs, No[R,C] = 0) % for non-circle fields count the edges of R|C:
         Cnt #= sum([EMap.get({R,C, R1,C1}, 0) : R1 in R-1..R+1, C1 in C-1..C+1, (R1,C1)!=(R,C)]),
         Cnt :: [0,2], % non open ends, no T- oder X-crossings
         EMap.get({R,C, R,C-1}, 0)   #= EMap.get({R,C, R,C+1}, 0),   % edge left <=> edge right
@@ -42,7 +42,7 @@ main =>
     solve(vars(Vs) ++ vars(Es)), ChrH = " -", ChrV = " |", ChrD = " \\/X",
     foreach(R in 1..N)
         foreach(C in 1..N)
-            CK = cond(var(No[R,C]), 'X', cond(No[R,C] > 0, chr(48+No[R,C]), cond(VMap.get({R,C}) = 1, '*', ' ') ) ),
+            CK = cond(No[R,C] = 9, 'X', cond(No[R,C] > 0, chr(48+No[R,C]), cond(VMap.get({R,C}) = 1, '*', ' ') ) ),
             CH = cond(C < N, ChrH[1+EMap.get({R,C, R,C+1})], ' '),
             printf("%c%c", CK, CH)
         end, nl,

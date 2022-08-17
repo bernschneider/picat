@@ -1,0 +1,47 @@
+/* Pipes Puzzle Game - using acyclic(Vs, Es) (availbale since Picat 3.2#7)
+https://www.puzzle-pipes.com/ */
+import util, sat.
+
+main =>
+    T=4, % 1 = endpoint, 2 = straight line , 3 = junction, 4 = turn 
+    SGrid = "o***", SHor = " -", SVer = " |",
+    P = {{1,1,1,T,2,1,1},
+         {2,T,3,2,1,T,T},
+         {3,2,3,3,2,T,T},
+         {1,1,3,3,3,2,T},
+         {T,3,3,3,3,2,1},
+         {2,1,2,3,3,3,T},
+         {1,1,T,1,1,1,1}}, N = len(P),
+    Vs = [{(R,C), 1} : R in 1..N, C in 1..N], % all cells are part of the graph
+    Es = [{(R,C), (R1,C1), _} : R in 1..N, C in 1..N, (R1,C1) in [(R-1,C), (R,C-1), (R,C+1), (R+1,C)], 0<R1, R1=<N, 0<C1, C1=<N],
+    EMap = new_map(), foreach({(R,C), (R1,C1), B} in Es) EMap.put({R,C,R1,C1}, B), EMap.put({R1,C1,R,C}, B) end,
+    Nbcnt = [1,2,3,2], % Nbcnt[P[R,C]] = number of neighbors connected to R|C 
+    foreach(R in 1..N, C in 1..N)
+        Nbcnt[P[R,C]] #= sum([EMap.get({R,C,R1,C1}) : (R1,C1) in [(R-1,C), (R,C-1), (R,C+1), (R+1,C)], 0<R1, R1=<N, 0<C1, C1=<N]),
+        if P[R,C] = 2 then 2 #= sum([EMap.get({R,C,R1,C}) : R1 in [R-1, R+1], 0<R1, R1=<N]) % straight vertical
+                       #\/ 2 #= sum([EMap.get({R,C,R,C1}) : C1 in [C-1, C+1], 0<C1, C1=<N]) end, % .. horizontal
+        if P[R,C] = 4 then 1 #= sum([EMap.get({R,C,R1,C}) : R1 in [R-1, R+1], 0<R1, R1=<N]), % vertical part of turn
+                           1 #= sum([EMap.get({R,C,R,C1}) : C1 in [C-1, C+1], 0<C1, C1=<N]) end % horizontal part
+    end,
+    scc(Vs, Es), % all cells are connected, a new global constraint in Picat version 3.1
+    acyclic(Vs, Es), % no loops are allowed
+    solve(vars(Es)),
+    foreach (R in 1..N-1)
+        foreach (C in 1..N-1) printf( "%c%c", SGrid[P[R,C]], SHor[1 + EMap.get({R,C, R,C+1})] ) end, println(SGrid[P[R,N]]),
+        foreach (C in 1..N)   printf( "%c ",                 SVer[1 + EMap.get({R,C, R+1,C})] ) end, nl
+    end,
+    foreach (C in 1..N-1) printf( "%c%c", SGrid[P[N,C]], SHor[1 + EMap.get({N,C, N,C+1})] ) end, println(SGrid[P[N,N]]). /*
+o o o *-*-o o
+| | | |     | 
+* *-* * o *-*
+|   | | | |   
+*-*-*-* * *-*
+|     | |   | 
+o o-*-* *-*-*
+    | | |     
+*-*-* *-*-*-o
+| | | |       
+* o * *-*-*-*
+|   | | | | | 
+o o-* o o o o
+CPU time 0.05 second, korrekt */

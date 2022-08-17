@@ -24,7 +24,7 @@ main =>
                            1 #= sum([EMap.get({R,C,R,C1}) : C1 in [C-1, C+1], 0<C1, C1=<N]) end % horizontal part
     end,
     scc(Vs, Es), % all cells are connected, a new global constraint in Picat version 3.1
-    acyclic(Vs, Es), % no loops are allowed
+    acyclic(Vs, Es), % no loops are allowed (when removing this line, the program runs much longer: CPU time 68.047 seconds.)
     solve(vars(Es)),
     foreach (R in 1..N-1)
         foreach (C in 1..N-1) printf( "%c%c", SGrid[P[R,C]], SHor[1 + EMap.get({R,C, R,C+1})] ) end, println(SGrid[P[R,N]]),

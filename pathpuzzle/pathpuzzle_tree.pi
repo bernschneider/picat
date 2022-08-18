@@ -14,6 +14,7 @@ main =>
     foreach({Cnt,L} in zip(Vsum, Grid.columns()) ++ zip(Hsum, Grid.rows()))
         Cnt #= sum(L)
     end,
+    scc(Vs, Es),
     solve(vars(Vs) ++ vars(Es) ++ vars(Grid)),
     SGrid = " *", SHor = " -", SVer = " |",
     % Attention: The edges in Es are undirected and always in @< lexicografical order!

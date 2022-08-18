@@ -1,0 +1,35 @@
+/* Path Puzzle - using hcp
+https://www.researchgate.net/publication/323570660_Path_Puzzles_Discrete_Tomography_with_a_Path_Constraint_is_Hard/figures?lo=1 */
+import util, sat.
+
+main =>
+    Start = (6,1), Goal = (1,2),
+    Hsum = [5,3,5,1,5,4],
+    Vsum = [5,3,3,4,3,5], 
+    N = len(Hsum), 
+    Grid = new_array(N,N), Grid :: 0..1,
+    Es = [{(R,C), (R1,C1), _} : R in 1..N, C in 1..N, R1 in 1..N, C1 in 1..N, abs(R1 - R) + abs(C1 - C) == 1]
+         ++ [{Goal, Start, 1}], % closing the loop
+    hcp_grid(Grid,Es),   % there is a path from Start to Goal
+    foreach({Cnt,L} in zip(Vsum, Grid.columns()) ++ zip(Hsum, Grid.rows()))
+        Cnt #= sum(L)
+    end,
+    solve(vars(Es) ++ vars(Grid)),
+    foreach(R in 1..N, C in 1..N)
+        if (R,C) = Goal then print("G|") else printf("%c|", arrow(Es,R,C)) end,
+        if C = N then nl end
+    end. /*
+>|G| |v|<|<|
+^| | |v| |^|
+^|<|<|<| |^|
+ | | | | |^|
+>|>|v| |>|^|
+^| |>|>|^| |
+CPU time 0.029 seconds, correct */
+arrow(Es,R,C) = Ar =>
+    if     membchk({(R,C), (R,C+1), 1}, Es) then Ar = '>'
+    elseif membchk({(R,C), (R,C-1), 1}, Es) then Ar = '<'
+    elseif membchk({(R,C), (R+1,C), 1}, Es) then Ar = 'v'
+    elseif membchk({(R,C), (R-1,C), 1}, Es) then Ar = '^'
+    else                                         Ar = ' '
+    end.

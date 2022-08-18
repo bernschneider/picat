@@ -11,6 +11,7 @@ main =>
     Vs = [{(R,C), Grid[R,C]} : R in 1..N, C in 1..N], 
     Es = [{(R,C), (R1,C1), _} : R in 1..N, C in 1..N, R1 in 1..N, C1 in 1..N, abs(R1 - R) + abs(C1 - C) == 1, (R,C) @< (R1,C1)],     
     path(Vs,Es,Start,[Goal]),   % there is an (undirected) path from Start to Goal
+    scc(Vs, Es),                % if this line is omitted Picat produces two additional and separated 2x2 squares to fulfil the sum constrains!
     foreach({Cnt,L} in zip(Vsum, Grid.columns()) ++ zip(Hsum, Grid.rows()))
         Cnt #= sum(L)
     end,

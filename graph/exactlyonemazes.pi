@@ -13,6 +13,7 @@ main(P) =>
     input(P, A), N = len(A), Amax = max([A[R,C] : R in 1..N, C in 1..N]),
     Vs = [{(R,C), _} : R in 1..N, C in 1..N], 
     Es = [{(R,C), (Z1,S1), _} : {(R,C),_} in Vs, {(Z1,S1),_} in Vs, abs(Z1 - R) + abs(S1 - C) = 1], 
+    % Find a path that moves from the Start in the lower left to the Finish in the upper right:
     path_d(Vs,Es,(N,1),(1,N)), 
     % The path must pass through exactly one unit square of each L shape:
     foreach(Sh in 1..Amax) sum([B : {(R,C),B} in Vs, R in 1..N, C in 1..N, A[R,C] = Sh]) #= 1 end,

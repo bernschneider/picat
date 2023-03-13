@@ -16,7 +16,7 @@ main(P) =>
     % Find a path that moves from the Start in the lower left to the Finish in the upper right:
     path_d(Vs,Es,(N,1),(1,N)), 
     % The path must pass through exactly one unit square of each L shape:
-    foreach(Sh in 1..Amax) sum([B : {(R,C),B} in Vs, R in 1..N, C in 1..N, A[R,C] = Sh]) #= 1 end,
+    foreach(Shape in 1..Amax) sum([B : {(R,C),B} in Vs, A[R,C] = Shape]) #= 1 end,
     solve(vars(Vs) ++ vars(Es)),
     foreach(R in 1..N, C in 1..N)
         printf("%c%c|", cond((R=N,C=1), 'S', cond((R=1,C=N), 'F', cond(A[R,C] = 0, ' ', chr(96+A[R,C])))), arrow(N, Es, R, C) ),

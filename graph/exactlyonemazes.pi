@@ -12,7 +12,7 @@ arrow(N, Es, R, C) = Chr =>
 main(P) =>
     input(P, A), N = len(A), Amax = max([A[R,C] : R in 1..N, C in 1..N]),
     Vs = [{(R,C), _} : R in 1..N, C in 1..N], 
-    Es = [{(R,C), (Z1,S1), _} : {(R,C),_} in Vs, {(Z1,S1),_} in Vs, abs(Z1 - R) + abs(S1 - C) = 1], 
+    Es = [{(R,C), (R1,C1), _} : {(R,C),_} in Vs, {(R1,C1),_} in Vs, abs(R1 - R) + abs(C1 - C) = 1], 
     % Find a path that moves from the Start in the lower left to the Finish in the upper right:
     path_d(Vs,Es,(N,1),(1,N)), 
     % The path must pass through exactly one unit square of each L shape:

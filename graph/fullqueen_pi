@@ -5,15 +5,17 @@ import sat.
 main(P) =>
     input(P, A), N = len(A), Start = (1,1), % Start exisitert damit überall in main 
     No = new_array(N,N), No :: 0..N*N, % numbering the vertices in the path starting from "Start" = 1
+    % all_different_except_0(vars(No)),
     foreach(Z in 1..N, S in 1..N) 
         A[Z,S] #= 1 #<=> No[Z,S] #= 0, % Z|S is not part of the path
         if A[Z,S] = 2 then No[Z,S] #= 1, Start := (Z,S) end % hier wird "Start" aus Zeile 6 verändert
     end, 
     Vs = [{(Z,S), 1} : Z in 1..N, S in 1..N, A[Z,S] != 1], % all white squares are passed by the path
-    % foreach({(Z,S), B} in Vs) B #= 1 #<=> No[Z,S] #> 0 end, % breaking symmetry
-    Es =  [{(Z,S), (Z1,S1), _} : {(Z,S),_} in Vs, {(Z1,S1),_} in Vs, abs(Z1 - Z) =< 1, abs(S1 - S) =< 1, (Z1,S1) != (Z,S)], 
+    foreach({(Z,S), B} in Vs) B #= 1 #<=> No[Z,S] #> 0 end, % breaking symmetry
+    Es =  [{(Z,S), (Z1,S1), _} : {(Z,S),_} in Vs, {(Z1,S1),_} in Vs, abs(Z1 - Z) =< 1, abs(S1 - S) =< 1, (Z1,S1) != (Z,S)], % mögliche Kanten
     % path_d(Vs,Es,Start,[V : {V,_} in Vs, V != Start]), % no solution
-    path_d(Vs,Es,Start,(4,4)), % (4,4) is magic!
+    % path_d(Vs,Es,Start,(4,4)), % (4,4) is magic!
+    scc_d(Vs,Es),
     EMap = new_map(), foreach ({(Z1,S1),(Z2,S2),B} in Es) EMap.put({Z1,S1,Z2,S2}, B) end,
 	% The path can only change direction when it hits a black square, a square that contains part of the existing path, or the edge of the grid:
     foreach({(Z1,S1), (Z2,S2), B} in Es, (Z2,S2) != Start) 
@@ -23,7 +25,7 @@ main(P) =>
             (B #= 1 #/\ EMap.get({Z2,S2,Z3,S3}) #= 0) #=> No[Z3,S3] #< No[Z2,S2]  % (Z3,S3) is part of the existing path
         end
 	end,
-    solve(vars(No) ++ vars(Es) ++ values(EMap)),
+    solve(vars(No) ++ vars(Es) ++ values(EMap)), println(Es),
     foreach(Z in 1..N, S in 1..N)
         if A[Z,S] = 1 then print("  |") else printf("%2d|", No[Z,S]) end,
         if S = N then nl end
@@ -33,9 +35,8 @@ input(1, A) =>
     A = {{1,0,0,0}, % 1 = Black
          {0,0,0,0}, % 2 = Start
          {1,0,0,0}, 
-         {2,0,1,0}}. /* solution, when (4,4) is given as destination:
-  | 7| 6| 5|
- 8|10|11| 4|
-  | 9| 3|12|
- 1| 2|  |13|
-CPU time 0.145 seconds, correct */
+         {2,0,1,0}}. /*
+  | 6| 5| 4|
+ 7| 8| 3| 6|
+  | 2| 9| 7|
+ 1|10|  | 8| wrong at 4|4 */

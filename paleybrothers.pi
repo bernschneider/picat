@@ -1,0 +1,41 @@
+/* Three Paley brothers and three Thomson brothers
+https://www.braingle.com/brainteasers/5160/half-truthful.html
+Can you find the six men's full names, and tell which men tell the truth and which tell lies? */
+import cp.
+main ?=>
+    First = ["Alan", "Boris", "Chuck", "Dalman", "Edwin", "Finney"], N = len(First),
+    A=1, B=2, C=3, D=4, E=5, F=6,
+    Truth  = new_list(N), Truth  :: 0..1, % 0 = lies, 1 = tells the truth
+    Family = new_list(N), Family :: 0..1, Paley=0, _Thomson=1, Second = ["Paley", "Thomson"],
+    sum(Family) #= 3,
+    sum(Truth) #= 3, % three of these six men always tell the truth, and three always tell lies
+    % neither set of brothers consists exclusively of liars:
+    % foreach(J in 0..1) sum([(Family[I] #= J) * Truth[I] : I in 1..N]) #> 0 end,
+    sum([(Family[I] #= Paley) * Truth[I] : I in 1..N]) #> 0,
+    % 1. Alan: "Both my brothers tell lies."
+    Truth[A] #= 1 #=> sum([(Family[I] #= Family[A]) * Truth[I] : I in 1..N]) #= 1, % Alan only tells the truth
+     % 2. Boris: "Both my brothers tell the truth."
+    sum([(Family[I] #= Family[B]) * Truth[I] : I in 1..N]) #!= 2,
+    % 3: Chuck: "Alan and Boris are both liars."
+    Truth[C] #= 1 #<=> (Truth[A] #= 0 #/\ Truth[B] #= 0),
+    % 4. Dalman: "Chuck and I are brothers."
+    Truth[D] #= 1 #<=> (Family[C] #= Family[D]),
+    % 5. Edwin: "Boris and I are brothers."
+    Truth[E] #= 1 #<=> (Family[B] #= Family[E]),
+    % 6. Finney: "Edwin tells the truth."
+    Truth[F] #= Truth[E],
+    % 7. Finney: "Boris is one of the Paleys."
+    Truth[F] #= 1 #<=> (Family[B] #= Paley),
+    solve(Truth ++ Family), 
+    % foreach(J in 0..1, I in 1..N, Family[I] = J)
+    foreach(I in 1..N)
+        J = Family[I], 
+        printf("%s %s %s.%n", First[I], Second[1+J], cond(Truth[I] = 0, " lies", "tells the truth"))  
+    end, nl, fail. /* 
+Alan Thomson  lies.
+Boris Paley  lies.
+Chuck Thomson tells the truth.
+Dalman Paley  lies.
+Edwin Paley tells the truth.
+Finney Thomson tells the truth.
+no more solutions, correct */

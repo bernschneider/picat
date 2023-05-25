@@ -1,0 +1,112 @@
+/* Janko Erich Friedman Chess Loop
+https://erich-friedman.github.io/puzzle/chessloop/ 
+The program does not find solutions, where a piece hides behind the attacked piece (for example no. 10) */
+import sat.
+% 1 = king, 2 = queen, 3 = rook, 4 = bishop, 5 = knight/Pferd:
+attacks(1,Z,S,Z1,S1) => (Z1 #!= Z #\/ S1 #!= S) #/\ abs(Z1 - Z) #=< 1 #/\ abs(S1 - S) #=< 1. % king
+attacks(2,Z,S,Z1,S1) => (attacks(3,Z,S,Z1,S1); attacks(4,Z,S,Z1,S1)).
+attacks(3,Z,S,Z1,S1) => (Z1 #!= Z #\/ S1 #!= S) #/\ (Z1 #= Z #\/ S1 #= S). % rook
+attacks(4,Z,S,Z1,S1) => (Z1 #!= Z #\/ S1 #!= S) #/\ (Z1 + S1 #= Z + S #\/ Z1 - S1 #= Z - S). % bishop
+attacks(5,Z,S,Z1,S1) => DZ #= abs(Z1 - Z), DS #= abs(S1 - S), (DZ #= 1 #/\ DS #= 2) #\/ (DZ #= 2 #/\ DS #= 1). % knight/Pferd
+notattacks(1,Z,S,Z1,S1) => (Z1 #= Z #/\ S1 #= S) #\/ abs(Z1 - Z) #> 1 #\/ abs(S1 - S) #> 1. % king
+notattacks(2,Z,S,Z1,S1) => notattacks(3,Z,S,Z1,S1), notattacks(4,Z,S,Z1,S1).
+notattacks(3,Z,S,Z1,S1) => (Z1 #= Z #/\ S1 #= S) #\/ (Z1 #!= Z #/\ S1 #!= S). % rook
+notattacks(4,Z,S,Z1,S1) => (Z1 #= Z #/\ S1 #= S) #\/ (Z1 + S1 #!= Z + S #/\ Z1 - S1 #!= Z - S). % bishop
+notattacks(5,Z,S,Z1,S1) => DZ #= abs(Z1 - Z), DS #= abs(S1 - S), (DZ #!= 1 #\/ DS #!= 2) #/\ (DZ #!= 2 #\/ DS #!= 1). % knight/Pferd
+
+place(No, Cnt2, Type, NZ, NS) =>	
+    Cnt = Cnt2 * 2,
+    Zs = new_list(Cnt), Zs :: 1..NZ, % Zs/Ss[1,3,5,..] = bishop
+    Ss = new_list(Cnt), Ss :: 1..NS, % Zs/Ss[2,4,6,..] = rook
+    foreach(I in 1..Cnt)
+        T = Type[I mod 2 + 1], % the attacks form an alternating ..
+        I1 = (I mod Cnt) + 1,  % .. loop.
+        attacks(T, Zs[I], Ss[I], Zs[I1], Ss[I1]), % Each piece attacks one of the other type of piece ..
+        foreach(I2 in 1..Cnt, I2 != I, I2 != I1) 
+          notattacks(T, Zs[I], Ss[I], Zs[I2], Ss[I2]);
+          %(attacks(T, Zs[I1], Ss[I1], Zs[I2], Ss[I2]), 
+           abs(Zs[I1]-Zs[I])**2 + abs(Ss[I1]-Ss[I])**2 #< abs(Zs[I2]-Zs[I])**2 + abs(Ss[I2]-Ss[I])**2 %)
+        end  % .. and no other piece
+    end,
+    solve(Zs ++ Ss), Chr = "KQ+x/",
+    printf("No %d:%n", No),
+    M = {{0 : _ in 1..NS} : _ in 1..NZ},
+    foreach(I in 1..Cnt) M[Zs[I],Ss[I]] := I end,
+    foreach(Z in 1..NZ, S in 1..NS)
+        Idx = M[Z,S] mod 2 + 1,
+        if M[Z,S] = 0 then print("  |") else printf("%d%c|", M[Z,S], Chr[Type[Idx]]) end, 
+        if S = NS then nl end
+    end.
+    
+main =>
+    once(place(0, 2, [4,3], 2,3)),
+    once(place(1, 2, [5,1], 2,3)),
+    once(place(2, 3, [5,1], 4,5)),
+    once(place(3, 2, [1,3], 2,4)),
+    once(place(4, 3, [1,3], 4,5)),
+    once(place(5, 2, [5,4], 3,3)),
+    once(place(6, 4, [5,4], 4,4)),
+    once(place(7, 4, [5,4], 3,5)), % Fehler in der Aufgabenstellung 3 statt 4!!
+    once(place(8, 4, [1,4], 4,6)),
+    once(place(9, 4, [1,4], 4,6)),
+    once(place(10, 3, [3,5], 3,4)),
+    % once(place(11, 5, [3,5], 3,8)),
+    once(place(12, 2, [2,5], 2,4)),
+    % once(place(13, 3, [2,5], 3,6)),
+    % once(place(14, 3, [2,5], 4,5)),
+    once(place(15, 4, [2,5], 4,7)). /*
+No 0:
+1+|2x|  |
+  |4x|3+|
+No 1:
+1K|  |3K|
+2/|  |4/|
+No 2:
+  |2/|1K|  |  |
+  |  |  |  |6/|
+3K|  |  |5K|  |
+  |4/|  |  |  |
+No 3:
+  |1+|  |2K|
+4K|  |3+|  |
+No 4:
+  |1+|  |  |  |
+6K|  |  |5+|  |
+  |  |3+|  |4K|
+  |2K|  |  |  |
+No 5:
+  |1x|3x|
+2/|  |  |
+4/|  |  |
+No 6:
+  |1x|  |  |
+  |4/|2/|7x|
+3x|6/|8/|  |
+  |  |5x|  |
+No 7:
+  |1x|4/|6/|  |
+  |  |2/|8/|5x|
+3x|  |7x|  |  |
+No 8:
+  |  |1x|8K|  |  |
+3x|  |  |  |  |6K|
+2K|  |  |  |  |7x|
+  |  |4K|5x|  |  |
+No 9:
+  |  |1x|8K|  |  |
+3x|  |  |  |  |6K|
+2K|  |  |  |  |7x|
+  |  |4K|5x|  |  |
+No 10 (this solution is not found by the above program!):
+5+|  |6/|2/|
+  |3+|4/|  |
+  |  |  |1+|
+No 12:
+4Q|1/|  |  |
+  |  |3/|2Q|
+No 15:
+1/|  |  |  |  |8Q|  |
+3/|  |2Q|  |  |  |  |
+  |  |  |  |6Q|  |7/|
+  |4Q|  |  |  |  |5/|
+korrekt */

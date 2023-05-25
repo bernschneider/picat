@@ -1,0 +1,63 @@
+/* Janko Erich Friedman Chess Position
+https://erich-friedman.github.io/puzzle/attack/ */
+import sat.
+
+attack(A, Fs, L) => % L = [0,..0,F] für ein F aus Fs:
+    A #= sum([ (L[J] :: Fs #/\ sum(L[1..J-1]) #= 0) : J in 1..len(L)]). 
+
+main(No) => % 1 = king, 2 = queen, 3 = rook, 4 = bishop, 5 = knight/Pferd, 6 = pawn/Bauer
+    input(No, C), NZ = len(C), NS = len(C[1]), N = max(NZ,NS),
+    M = new_array(NZ,NS), M :: 0..6, 
+    % Place any 3 white chess pieces on each board so that each square is attacked a number of times equal to the number in that square
+    Mvars = vars(M), count(0, Mvars, NZ * NS - 3), 
+    foreach(Z0 in 1..NZ, S0 in 1..NS) % count number of attacks:
+        % king:
+        AK #= sum([(M[Z,S] #= 1) : Z in Z0-1..Z0+1, S in S0-1..S0+1, (Z,S)!=(Z0,S0), 0<Z, Z=<NZ, 0<S, S=<NS]),
+        % queen or rook
+        AR = new_list(4), % attack from the four wind directions
+        foreach({A,(FZ,FS)} in zip(AR, [(-1,0),(1,0),(0,-1),(0,1)])) 
+            attack(A, [2,3], [M[Z,S] : Step in 1..N-1, Z = Z0+Step*FZ, S = S0+Step*FS, 0<Z, Z=<NZ, 0<S, S=<NS]) 
+        end,
+        % queen or bishop:
+        AB = new_list(4), % attack from the four diagonal directions
+        foreach({A,(FZ,FS)} in zip(AB, [(-1,-1),(-1,1),(1,-1),(1,1)]))
+            attack(A, [2,4], [M[Z,S] : Step in 1..N-1, Z = Z0+Step*FZ, S = S0+Step*FS, 0<Z, Z=<NZ, 0<S, S=<NS])
+        end,
+        % knight/Pferd:
+        AKn #= sum([(M[Z,S] #= 5) : DZ in 1..2, FZ in [-1,1], FS in [-1,1], Z = Z0+FZ*DZ, S = S0+FS*(3-DZ), 0<Z, Z=<NZ, 0<S, S=<NS]), 
+        % pawn:
+        AP  #= sum([(M[Z,S] #= 6) : Z in [Z0+1], S in [S0-1,S0+1], Z=<NZ, 0<S, S=<NS]), 
+        C[Z0,S0] #= AK + sum(AR) + sum(AB) + AKn + AP
+    end,
+    solve(M), Chr = " @*+XL^", % king, queen, rook, bishop, knight/Pferd, pawn/Bauer
+    foreach(Z in 1..NZ, S in 1..NS) 
+        printf("%c|", Chr[1+M[Z,S]]), if S = NS then nl end
+    end.
+
+input(0, C) =>
+    C = {{0,1,1}, {1,3,1}}. /*
+X| |@|
+ | |+| correct */
+input(1, C) =>
+    C = {{0,1,1}, {1,2,2}}. /*
+L| |@|
+ | |+| correct */
+input(5, C) =>
+    C = {{0,2,0}, {1,2,2}}. /*
+X| |@|
+ |+| | correct */
+input(10, C) =>
+    C = {{2,1,1}, {0,1,1}, {0,2,0}}. /*
+ | | |
+ | |X|
+ |L|*| correct */
+input(11, C) =>
+    C = {{1,0,3}, {1,1,0}, {0,1,1}}. /*
+ | | |
+L| | |
+*|L| | correct */
+input(17, C) =>
+    C = {{1,2,1}, {2,2,0}, {0,1,1}}. /*
+@| | |
+ | |^|
+*| | | correct */

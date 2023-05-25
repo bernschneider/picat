@@ -1,0 +1,63 @@
+/* Janko Erich Friedman Chess Attack
+https://erich-friedman.github.io/puzzle/chessattack/ */
+import sat.
+
+attack(A, Fs, L) => % L = [0,..0,F] für ein F aus Fs:
+    A #= sum([ (L[J] :: Fs #/\ sum(L[1..J-1]) #= 0) : J in 1..len(L)]). 
+
+main(No) =>
+    input(No, NZ, NS, Cs), N = max(NZ,NS),
+    M = new_array(NZ,NS), Mvars = vars(M), M :: [0]++[F : (_,F,_,_) in Cs], 
+    % Place pieces on the board:
+    foreach((Cnt,F,_,_) in Cs) count(F, Mvars, Cnt) end,
+    Ki=1, Qu=2, Ro=3, Bi=4, Kn=5, % King, Queen, Rook, Bishop, Knight/Pferd
+    foreach(Z0 in 1..NZ, S0 in 1..NS) % count number of attacks from Z0|S0
+        A = new_array(5,5), % A[F,To] = number of attacks from F at Z0|S0 to To 
+        foreach(To in 1..5)
+            % King:
+            A[Ki,To] #= sum([(M[Z,S] #= To) : Z in Z0-1..Z0+1, S in S0-1..S0+1, (Z,S)!=(Z0,S0), 0<Z, Z=<NZ, 0<S, S=<NS]),
+            % Rook:
+            AR = new_list(4), % attack from the four wind directions
+            foreach({X,(FZ,FS)} in zip(AR, [(-1,0),(1,0),(0,-1),(0,1)])) 
+                attack(X, [To], [M[Z,S] : Step in 1..N-1, Z = Z0+Step*FZ, S = S0+Step*FS, 0<Z, Z=<NZ, 0<S, S=<NS]) 
+            end,
+            A[Ro,To] #= sum(AR),
+            % Bishop:
+            AB = new_list(4), % attack from the four diagonal directions
+            foreach({X,(FZ,FS)} in zip(AB, [(-1,-1),(-1,1),(1,-1),(1,1)]))
+                attack(X, [To], [M[Z,S] : Step in 1..N-1, Z = Z0+Step*FZ, S = S0+Step*FS, 0<Z, Z=<NZ, 0<S, S=<NS])
+            end,
+            A[Bi,To] #= sum(AB),
+            % Queen:
+            A[Qu,To] #= A[Ro,To] + A[Bi,To],
+            % Knight/Pferd:
+            A[Kn,To] #= sum([(M[Z,S] #= To) : DZ in 1..2, FZ in [-1,1], FS in [-1,1], Z = Z0+FZ*DZ, S = S0+FS*(3-DZ), 0<Z, Z=<NZ, 0<S, S=<NS])
+        end,
+        foreach((_,F,NA,To) in Cs) M[Z0,S0] #= F #=> (A[F,To] #= NA #/\ A[F,F] #= 0) end        
+    end,
+    solve(M), Chr = " @*+XL", % king, queen, rook, bishop, knight/Pferd
+    foreach(Z in 1..NZ, S in 1..NS) 
+        printf("%c|", Chr[1+M[Z,S]]), if S = NS then nl end
+    end.
+
+input(1, NZ, NS, Cs) =>
+    Ki=1, Ro=3,
+    NZ = 3, NS = 4, Cs = [(2,Ro, 3,Ki), (4,Ki, 1,Ro)]. /*
+@|+|@| |
+ | | | |
+ |@|+|@| correct */
+input(2, NZ, NS, Cs) =>
+    Bi=4, Kn=5,
+    NZ = 4, NS = 4, Cs = [(4,Bi, 2,Kn), (4,Kn, 2,Bi)]. /*
+ |X|X| |
+L| | |L|
+L| | |L|
+ |X|X| | correct */
+input(13, NZ, NS, Cs) =>
+    Ro=3, Bi=4, 
+    NZ = 5, NS = 6, Cs = [(2,Ro, 3,Bi), (6,Bi, 1,Ro)]. /*
+ | | |X| | |
+ |X|+| | |X|
+ | | | | | |
+X| | |+|X| |
+ | |X| | | | CPU time 0.378 seconds, correct */

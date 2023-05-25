@@ -1,0 +1,90 @@
+/* Janko Erich Friedman Chess-Num
+https://erich-friedman.github.io/puzzle/chessnum/ */
+import sat.
+
+attack(A, Fs, L) => % L = [0,..0,F] für ein F aus Fs:
+    A #= sum([ (L[J] :: Fs #/\ sum(L[1..J-1]) #= 0) : J in 1..len(L)]). 
+
+main(No) =>
+    input(No, Cnt), N = len(Cnt),
+    % Six chess pieces (one each of king, queen , rook, bishop, knight, and pawn) are hiding in each of the grids below:
+    Ki=1, Qu=2, Ro=3, Bi=4, Kn=5, Pn = 6, 
+    M = new_array(N,N), Mvars = vars(M), M :: 0..6, 
+    foreach(F in 1..6) count(F, Mvars, 1) end,
+    % Each numbered square shows how many times that square is attacked:
+    foreach(Z0 in 1..N, S0 in 1..N, Cnt[Z0,S0] >= 0) 
+        M[Z0,S0] #= 0, % no piece is on a numbered square
+        % King:
+        AKi #= sum([(M[Z,S] #= Ki) : Z in Z0-1..Z0+1, S in S0-1..S0+1, (Z,S)!=(Z0,S0), 0<Z, Z=<N, 0<S, S=<N]),
+        % Orthogonal attacks:
+        Aorth #= sum([X : (FZ,FS) in [(-1,0),(1,0),(0,-1),(0,1)],
+                          attack(X, [Qu,Ro], [M[Z,S] : Step in 1..N-1, Z = Z0+Step*FZ, S = S0+Step*FS, 0<Z, Z=<N, 0<S, S=<N])  ]),
+        % Diaonal attacks:
+        Adiag #= sum([X : (FZ,FS) in [(-1,-1),(-1,1),(1,-1),(1,1)],
+                          attack(X, [Qu,Bi], [M[Z,S] : Step in 1..N-1, Z = Z0+Step*FZ, S = S0+Step*FS, 0<Z, Z=<N, 0<S, S=<N])  ]),
+        % Knight/Pferd:
+        AKn #= sum([(M[Z,S] #= Kn) : DZ in 1..2, FZ in [-1,1], FS in [-1,1], Z = Z0+FZ*DZ, S = S0+FS*(3-DZ), 0<Z, Z=<N, 0<S, S=<N]),
+        % Pawn:
+        APn #= sum([(M[Z,S] #= Pn) : Z in [Z0+1], S in [S0-1,S0+1], Z =< N, 0 < S, S =< N]),
+        Cnt[Z0,S0] #= AKi + Aorth + Adiag + AKn + APn
+    end,
+    solve(M), Chr = " @*+XL^", % king, queen, rook, bishop, knight/Pferd, Pawn
+    foreach(Z in 1..N, S in 1..N) 
+        printf("%c|", cond(Cnt[Z,S] >= 0, chr(48+Cnt[Z,S]), Chr[1+M[Z,S]])), 
+        if S = N then nl end
+    end.
+
+input(0, Cnt) =>
+    O = -1,
+    Cnt = {{O,1,O,6,O,O,O,O},
+           {O,O,O,O,O,O,O,O},
+           {O,O,O,O,2,O,O,O},
+           {O,O,O,O,O,O,O,O},
+           {O,O,O,0,O,O,O,O},
+           {O,O,O,O,O,O,O,O},
+           {O,O,O,O,O,O,O,O},
+           {O,O,O,O,O,O,O,O}}. /*
+ |1|+|6| | |*| |
+ |L| |@|^| | | |
+ | | | |2| | | |
+X| | | | | | | |
+ | | |0| | | | |
+ | | | | | | | |
+ | | | | | | | |
+ | | | | | | | |       CPU time 0.053 seconds, correct */
+input(1, Cnt) =>
+    O = -1,
+    Cnt = {{O,O,O,O,O,O,O,O},
+           {O,O,4,O,O,O,O,O},
+           {O,O,O,O,O,O,O,O},
+           {O,O,O,O,O,O,4,O},
+           {O,O,O,O,O,O,O,O},
+           {0,O,O,O,O,O,O,O},
+           {O,O,O,O,O,O,O,O},
+           {O,O,4,O,O,O,O,O}}. /*
+ | | | | | | | |
+ | |4| | | | | |
+ |^| | |L| | | |
+ | |+| | | |4| |
+ | | | | |X| | |
+0| | | | | | | |
+ | | | | | | | |
+ |@|4| | | |*| |       CPU time 0.095 seconds, correct */
+input(9, Cnt) =>
+    O = -1,
+    Cnt = {{0,0,0,0,0,0,0,0},
+           {1,1,1,1,1,1,1,1},
+           {O,O,O,O,O,O,O,O},
+           {O,O,O,O,O,O,O,O},
+           {O,O,O,O,O,O,O,O},
+           {1,O,O,O,O,O,O,O},
+           {O,O,2,O,O,O,O,O},
+           {O,O,O,O,3,O,O,O}}. /*
+0|0|0|0|0|0|0|0|
+1|1|1|1|1|1|1|1|
+ | |@| | |^| | |
+ | | | | | |L| |
+ | | | | | | | |
+1| |*| | | | | |
+ | |2| | |X| | |
+ | |+| |3| | | |        CPU time 0.701 seconds, correct */

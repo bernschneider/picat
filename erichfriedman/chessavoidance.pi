@@ -1,0 +1,109 @@
+/* Janko Erich Friedman Chess Avoidance
+https://erich-friedman.github.io/puzzle/chessavoid/ */
+import cp.
+% 1 = king, 2 = queen, 3 = rook, 4 = bishop, 5 = knight/Pferd:
+notattacks(1,Z,S,Z1,S1) => (Z1 #= Z #/\ S1 #= S) #\/ abs(Z1 - Z) #> 1 #\/ abs(S1 - S) #> 1. % king
+notattacks(2,Z,S,Z1,S1) => notattacks(3,Z,S,Z1,S1), notattacks(4,Z,S,Z1,S1).
+notattacks(3,Z,S,Z1,S1) => (Z1 #= Z #/\ S1 #= S) #\/ (Z1 #!= Z #/\ S1 #!= S). % rook
+notattacks(4,Z,S,Z1,S1) => (Z1 #= Z #/\ S1 #= S) #\/ (Z1 + S1 #!= Z + S #/\ Z1 - S1 #!= Z - S). % bishop
+notattacks(5,Z,S,Z1,S1) => DZ #= abs(Z1 - Z), DS #= abs(S1 - S), (DZ #!= 1 #\/ DS #!= 2) #/\ (DZ #!= 2 #\/ DS #!= 1). % knight/Pferd
+
+place(No, Type, NZ, NS, Tabu) => 
+    Cnt = len(Type), 
+    Zs = new_list(Cnt), Zs :: 1..NZ, % row position of the pieces 
+    Ss = new_list(Cnt), Ss :: 1..NS, % column position of the pieces 
+    Pos = new_list(Cnt), 
+    foreach(I in 1..Cnt) 
+        Pos[I] #= NS * Zs[I] + Ss[I]-1
+    end,
+    all_different(Pos), 
+    Pos notin Tabu, % Tabu format see lines 17 in combination with 34, 49, 78 resp. 104
+    foreach(I in 1..Cnt, I1 in 1..Cnt, I1 != I)
+        notattacks(Type[I], Zs[I], Ss[I], Zs[I1], Ss[I1]) % Each piece attacks one of the other type of piece ..
+    end,
+    solve(Zs ++ Ss), Chr = "KQ+x/",
+    printf("No %d:%n", No),
+    M = {{0 : _ in 1..NS} : _ in 1..NZ},
+    foreach(I in 1..Cnt) M[Zs[I],Ss[I]] := Type[I] end,
+    foreach(Z in 1..NZ, S in 1..NS)
+        if M[Z,S] = 0 then print(" |") else printf("%c|", Chr[M[Z,S]]) end, 
+        if S = NS then nl end
+    end.
+    
+main =>
+    K=1, Q=2, R=3, B=4, Kn=5, % King, Queen, Rook, Bishop, 5 = Kn_ight/Pferd
+    % In board 1 NS = 4; Z|S = 1|1 is tabu. Here Tabu = [NS * Z + S - 1] = [4]
+    once(place(1, [B,B,B,B,Q], 3,4, [4])), /* No. 1
+ | |x|x|
+Q| | | |
+ | |x|x|  korrekt */
+    once(place(2, [K,K,Kn,Kn,R], 3,4, [4])), /* No. 2
+ |/| |K|
++| | | |
+ |/| |K| korrekt */
+    once(place(3, [B,B,K,K,Kn,Kn], 3,4, [4])), /* No. 3
+No 3:
+ |K| |K|
+ | | | |
+x|/|x|/| korrekt */
+    % In board 2 NS = 5; Z|S = 1|1, 1|4, 1|5 are tabu. Here Tabu = [5,8,9]
+    once(place(4, [B,Kn,Q,Q], 3,5, [5,8,9])), /* No 4:
+ |Q| | | |
+ | | |x|/|
+Q| | | | | korrekt */
+    once(place(5, [K,Kn,Q,R], 3,5, [5,8,9])), /* No 5:
+ |Q| | | |
+ | | |+| |
+K| | | |/| korrekt */
+    once(place(6, [Kn,Kn,Kn,Q], 3,5, [5,8,9])), /* No 6:
+ |/| | | |
+/|/| | | |
+ | | | |Q| korrekt */
+    once(place(7, [Kn,Kn,Kn,R,R], 3,5, [5,8,9])), /* No 7:
+ |+| | | |
+/| |/| |/|
+ | | |+| | korrekt */
+    once(place(8, [B,K,K,Kn,Q], 3,5, [5,8,9])), /* No 8:
+ |Q| | | |
+ | | | |x|
+K| |K| |/| korrekt */
+    once(place(9, [B,B,B,B,Kn,Kn], 3,5, [5,8,9])), /* No 9:
+ |x| | | |
+ | | | |x|
+x|/|x| |/| korrekt */
+    once(place(10, [B,B,B,K,Kn,R], 3,5, [5,8,9])), /* No 10:
+ |K| | | |
+ | | | |+|
+x|x|x|/| | korrekt */
+    % In board 3 NS = 4; Z|S = 1|1, 2|1, 3|1 are tabu. Here Tabu = [4,8,12]
+    once(place(11, [K,Kn,Q,Q], 4,4, [4,8,12])), /* No 11:
+ |Q| | |
+ | | |Q|
+ | | | |
+/| |K| | korrekt */
+    once(place(12, [B,K,Kn,Kn,Q], 4,4, [4,8,12])), /* No 12:
+ |Q| | |
+ | | |K|
+ | | | |
+/| |x|/| korrekt */
+    once(place(13, [K,K,Kn,R,R], 4,4, [4,8,12])), /* No 13:
+ | | |K|
+ |+| | |
+ | |+| |
+K| | |/| korrekt */
+    once(place(14, [K,K,K,Kn,Kn,Kn], 4,4, [4,8,12])), /* No 14:
+ |K| |K|
+ | | | |
+ | | |/|
+K| |/|/| korrekt */
+    once(place(15, [B,B,B,B,B,Kn,Kn], 4,4, [4,8,12])), /* No 15:
+ |x|x|/|
+ | | | |
+ | | | |
+/|x|x|x| korrekt */
+    % In board 4 NS = 5; Z|S = 1|1 is tabu. Here Tabu = [5]
+    % ...
+    once(place(20, [B,B,Kn,Kn,Kn,Kn,R], 3,5, [5])). /* No 20:
+ | |+| | |
+x|/| |/|x|
+/| | | |/| korrekt */

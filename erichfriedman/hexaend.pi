@@ -1,0 +1,73 @@
+/* Janko Erich Friedman Hex End
+https://erich-friedman.github.io/puzzle/deadend/ */
+import util, sat.
+
+main(No) =>
+    input(No, M), 
+    NZ = len(M), NS = len(M[1]),
+    Vs = [{(Z,S),_} : Z in 1..NZ, S in 1..NS, M[Z,S] != x],   
+    VMap = new_map(), foreach ({(Z,S),B} in Vs) VMap.put({Z,S}, B) end,
+    Es = [{(Z,S),(Z1,S1),_} :  Z in 1..NZ, S in 1..NS, M[Z,S] != x,         % / only   
+                               (Z1,S1) in [(Z-1,S),(Z,S-1),(Z,S+1),(Z+1,S), (Z+1,S-1),(Z-1,S+1)],   
+                               0<Z1, Z1=<NZ, 0<S1, S1=<NS, M[Z1,S1] != x],
+    % Count the steps of the path:
+    Step = new_array(NZ,NS), Step :: 0..NZ*NS, 
+    Start = x, Finish = x,
+    foreach(Z in 1..NZ, S in 1..NS) 
+        if M[Z,S] = x then Step[Z,S] #= 0 else VMap.get({Z,S}) #= 1 #<=> Step[Z,S] #> 0 end,
+        if     M[Z,S] = s then Start := (Z,S), Step[Z,S] #= 1 
+        elseif M[Z,S] = f then Finish := (Z,S) end
+    end,
+    foreach({(Z1,S1),(Z2,S2),B} in Es) B #=> Step[Z2,S2] #= Step[Z1,S1] + 1 end, 
+    % The path can only change direction when it hits a black hex, a hex that contains part of the existing path, or the edge of the grid:
+    foreach({(Z1,S1),(Z2,S2),B1} in Es, {(Z2,S2),(Z3,S3),B2} in Es, Z3 = Z2+Z2-Z1, S3 = S2+S2-S1)
+        (B1 #=1 #/\ B2 #= 0) #=> (0 #< Step[Z3,S3] #/\ Step[Z3,S3] #< Step[Z2,S2])
+    end,
+    % The path must dead end at F, meaning no continuation of the path is possible:
+    foreach({Finish,(Z2,S2),_} in Es) Step[Z2,S2] #> 0 end, % cul de sac
+    % Draw a path that starts at S and finishes at F:
+    path_d(Vs, Es, Start, Finish),
+    solve(vars(Vs)  ++ vars(Es) ++ vars(Step) ++ values(VMap)),
+    foreach(Z in 1..NZ, S in 1..NS) 
+		if Step[Z,S] = 0 then print("  |") else printf("%2d|", Step[Z,S]) end,
+	    if S = NS then nl end
+    end.
+
+% Given hexagon rotated 60 degrees to the left; x´s are included to the left or right as needed: 
+input(0, M) => % M[1,3] = top right hex, M[1,4] = last hex of line 2, M[1,5] = last hex of line 3
+    M = {{x,x,0,s,0}, % x + x + the top right \ diagonal (3 hexagons)
+         {x,0,0,x,0}, % x + the second \ diagonal (4 hexagons)
+         {0,x,0,f,0}, % (5 hexagons)
+         {0,0,0,0,x}, % (4 hexagons + x)
+         {0,0,x,x,x}}. /* (3 hexagons + x + x)
+  |  |11| 1| 2|  = x + x + 3 hexagons of the top right \ diagonal
+  |10|12|  | 3|  = x + 4 hexagons of second \
+ 9|  |13|14| 4|  = 5 hexagons of third \
+ 8| 7| 6| 5|  |  = 4 hexagons of 4th \ + x
+  |  |  |  |  |  = 3 hexagons of 5th \ + x + x, korrekt */
+input(1, M) =>
+    M = {{x,x,0,0,0}, 
+         {x,0,x,0,x}, 
+         {x,0,0,f,0}, 
+         {0,0,s,0,x}, 
+         {0,0,0,x,x}}. /*
+  |  | 6| 5| 4|
+  | 7|  | 3|  |
+  | 8| 2|14|13|
+  | 9| 1|12|  |
+  |10|11|  |  | korrekt */
+input(13, M) =>
+    M = {{x,x,x,0,0,0,0}, 
+         {x,x,f,0,x,x,0}, 
+         {x,0,0,0,0,0,0}, 
+         {0,0,0,0,0,0,0}, 
+         {0,x,0,0,0,0,x}, 
+         {0,0,0,0,s,x,x},
+         {0,0,0,x,x,x,x}}. /*
+  |  |  |19|18|17|16|
+  |  |24|20|  |  |15|
+  |23|22|21|  |  |14|
+ 7| 8| 9|10|11|12|13|
+ 6|  |  |  |  |  |  |
+ 5| 4| 3| 2| 1|  |  |
+  |  |  |  |  |  |  | CPU time 0.548 seconds, korrekt */

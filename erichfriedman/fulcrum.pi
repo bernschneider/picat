@@ -1,0 +1,69 @@
+/* Janko Erich Friedman Fulcrum (Hebeldrehpunkt der Waage)
+https://erich-friedman.github.io/puzzle/fulcrum/  */
+import util, smt. % Don´t use sat! (It´s producing wrong results.)
+
+balance(L) =>
+    Len = len(L), F=4, % 4 = Fulcrum
+    IA :: 2..Len-1, % Index of the Fulcrum (The fulcrum will not be at the end of a balance)
+    count(F, L, 1), element(IA, L, F), % exactly one fulcrum, at position IA
+    sum([L[I] * (IA - I) : I in 1..Len]) #= 0. % the weights are balanced!
+
+main(Nr) =>
+    input(Nr, Bal, Rsum, Csum), NR = len(Bal), NC = len(Bal[1]), F=4,
+    M = new_array(NR, NC), M :: 0..F, % weights 0..3 and fulcrum F
+    foreach(R in 1..NR, C in 1..NC)
+        if Bal[R,C] = '<' then % a horizontal balance strip starts here
+            C1 = C + 1, while(Bal[R,C1] = ' ') C1 := C1 + 1 end,
+            balance([M[R,Sx] : Sx in C..C1])
+        elseif Bal[R,C] = '^' then % a vertical balance strip starts here
+            R1 = R + 1, while(Bal[R1,C] = ' ') R1 := R1 + 1 end,
+            balance([M[Zx,C] : Zx in R..R1])
+        end
+    end,
+    % Each number outside the grid indicates the total weight in that row or column, counting fulcrums as 0:
+    foreach({L, Sum} in zip(M.rows(),    Rsum)) sum([V * (V #< F) : V in L]) #= Sum end,
+    foreach({L, Sum} in zip(M.columns(), Csum)) sum([V * (V #< F) : V in L]) #= Sum end,
+    solve(M), Chr = "_123+", % 4 = + (Fulcrum)
+    foreach(R in 1..NR, C in 1..NC) 
+        if Bal[R,C] = '>' 
+        then printf("%c%c ", Chr[1+M[R,C]], Bal[R,C])    
+        else printf("%c%c ", Bal[R,C], Chr[1+M[R,C]]) 
+        end,
+        if C = NC then nl end 
+    end.
+
+input(0, Bal, Rsum, Csum) => 
+    Bal = {"^<  >",
+           " < >^",
+           "v< > ",
+           "<  >v"},
+    Rsum = [4,3,_,_], Csum = [3,7,_,_,_]. /* 
+^1 <2  +  _ 1> 
+ + <1  + 1> ^1 
+v1 <3  + 3>  + 
+<1  1  + 3> v1 
+CPU time 0.015 seconds, correct */
+input(5, Bal, Rsum, Csum) => 
+    Bal = {"^<  >",
+           " <  >",
+           " < >^",
+           "v< > ",
+           "<  >v"},
+    Rsum = [3,_,_,_,7], Csum = [2,3,_,_,4]. /* 
+^3 <_  +  _ _> 
+ + <_  +  _ _> 
+ 1 <3  + 3> ^2 
+v1 <_  + _>  + 
+<3  +  1 1> v2 
+CPU time 0.018 seconds, correct */
+input(14, Bal, Rsum, Csum) => 
+    Bal = {"^<   >",
+           " <  >^",
+           "v<  > ",
+           "<   >v"},
+    Rsum = [4,5,4,_], Csum = [6,_,6,_,_,_]. /* 
+^2 <_  1  +  1 _> 
+ + <_  2  + 2> ^1 
+v2 <_  1  + 1>  + 
+<2  +  2  _ _> v1 
+CPU time 0.021 seconds, correct */

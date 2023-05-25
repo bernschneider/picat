@@ -1,0 +1,17 @@
+/* Janko Erich Friedman Equation
+https://erich-friedman.github.io/puzzle/equation/ */
+import cp.
+main(P) ?=>
+    % Each box holds a different digit from 1 to 9:   
+    Digits = [A,B,C,D,E,F,G,H,I], Digits :: 1..9, all_different(Digits), 
+    input(P, A,B,C,D,E,F,G,H,I),
+    solve(Digits),
+    println(Digits),  
+    fail.
+
+input(1,A,B,C,D,E,F,G,H,I) =>
+    % All calculations are done from left to right, and only involve positive integers:
+    F - G #> 0, (F - G) * H #= I, 
+    A * B * C #= D + E + F + G + H + I,
+    A - B #> 0, (A - B) * C #= D - E - H. /* 
+[8,4,1,9,2,7,5,3,6], correct */

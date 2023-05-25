@@ -1,0 +1,67 @@
+/* Janko Erich Friedman Knight Loop
+https://erich-friedman.github.io/puzzle/knight/ */
+import util, sat.
+times(N, C) = [C : _ in 1..N]. % produce a string with N times the character C (used in line 31)
+
+main(P) =>
+    input(P, Ar), NZ = len(Ar), NS = len(Ar[1]), Amax = max(array_matrix_to_list(Ar)),
+    Vs = [{(Z,S), _} : Z in 1..NZ, S in 1..NS], 
+    foreach(A in 1..Amax) sum([B : {(Z,S), B} in Vs, Ar[Z,S] = A]) #= 1 end,
+    Es =  [{(Z,S), (Z1,S1), _} : {(Z,S),_} in Vs, {(Z1,S1),_} in Vs, DZ = abs(Z1 - Z), DS = abs(S1 - S), ((DZ=1,DS=2);(DZ=2,DS=1))],
+    hcp(Vs, Es), % die gerichteten Kanten in Es formen einen Hamilton-Cycle auf Vs
+    % The tour does not cross itself:
+    foreach({(A1Z,A1S),(A2Z,A2S),A} in Es, {(B1Z,B1S),(B2Z,B2S),B} in Es)
+        if A1Z > A2Z then AA1Z = A2Z, A2Z := A1Z, A1Z := AA1Z, % switch A1 and A2
+                          AA1S = A2S, A2S := A1S, A1S := AA1S end,   
+        if B1Z > B2Z then BB1Z = B2Z, B2Z := B1Z, B1Z := BB1Z, % switch B1 and B2
+                          BB1S = B2S, B2S := B1S, B1S := BB1S end,   
+        % Now A1Z < A2Z and B1Z < B2Z! 
+        if  (A1Z,A1S) != (B1Z,B1S), (A1Z,A1S) != (B2Z,B2S), (A2Z,A2S) != (B1Z,B1S), (A2Z,A2S) != (B2Z,B2S),
+            % (B1S < A1S; B1Z < A2Z), % kann oder muss eventuell wegfallen, aber AND geht zu weit (liefert falsche Lösung)
+            % B1 or B2 lie in the rectangle spanned by A1 and A2:
+            ((A1Z =< B1Z, B1Z < A2Z, A1S =< B1S, B1S < A2S); (A1Z =< B2Z, B2Z < A2Z, A1S =< B2S, B2S < A2S)),
+            sign(B2S - B1S) != sign(A2S - A1S)
+        then A + B #< 2 end
+    end,
+    solve(vars(Vs) ++ vars(Es)), % println(vs=Vs),
+    M = {{[] : _ in 1..NS} : _ in 1..NZ}, Hdir = "<< >>", Vdir = "^^ vv",
+    foreach({(Z1,S1),(Z2,S2),1} in Es) DZ = Z2 - Z1, DS = S2 - S1, M[Z1,S1] := [DZ,DS] end,
+    foreach(Z in 1..NZ, S in 1..NS)
+        if M[Z,S] = [] then print("   |") 
+        else [DZ,DS] = M[Z,S], printf("%s%s|", times(abs(DS), Hdir[DS+3]), times(abs(DZ), Vdir[DZ+3])) end, 
+        if S = NS then nl end
+    end.
+
+input(0, Ar) =>
+    Ar = {{1,1,5,5,5},
+          {2,1,5,7,8},
+          {2,2,2,7,8},
+          {3,4,6,7,8},
+          {3,4,6,6,8}}. /*
+>vv|   |   |   |   |
+   |   |<<^|   |   |
+   |<vv|   |<<v|   |
+   |>^^|>>v|   |   |
+>>^|   |   |   |<^^|, korrekt */
+input(1, Ar) =>
+    Ar = {{1,1,4,4,4},
+          {1,1,4,5,4},
+          {2,1,1,5,5},
+          {2,3,3,5,6},
+          {2,2,3,6,6}}. /*
+   |   |>vv|   |   |
+   |   |   |   |   |
+   |>^^|   |>vv|   |
+   |   |<<v|   |   |
+>^^|   |   |   |<<^|, korrekt */
+input(7, Ar) =>
+    Ar = {{1,1,4,6,6,6},
+          {1,3,4,4,6,8},
+          {1,3,5,4,7,8},
+          {2,3,5,5,7,8},
+          {2,2,5,7,7,8}}. /*
+>>v|   |   |   |>vv|   |
+   |   |>>^|   |   |   |
+   |<^^|   |   |   |<vv|
+   |   |<<v|   |   |   |
+>^^|   |   |   |<<^|   | korrekt */

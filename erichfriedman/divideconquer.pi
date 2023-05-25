@@ -1,0 +1,57 @@
+/* Janko Erich Friedmann Divide and Conquer
+https://erich-friedman.github.io/puzzle/conquer/ */
+import util, sat. 
+
+main(Nr) => 
+    input(Nr, C), N = len(C), Wr=1, Sr=2, % Orientation
+    M = new_array(3,2,N,N), M :: 0..1, 
+    % M[Len,Ori,Z,S] = 1 <=> a strip is starting at Z|S with length Len and orientation Ori
+    foreach(Len in 2..3, Z in 1..N, S in N+2-Len..N) M[Len,Wr,Z,S] #= 0 end,
+    foreach(Len in 2..3, S in 1..N, Z in N+2-Len..N) M[Len,Sr,Z,S] #= 0 end,
+    % All squares are used exactly once: 
+    foreach(Z in 1..N, S in 1..N)
+        1 #= M[1,Wr,Z,S] + sum([M[Len,Wr,Z,S1] : Len in 2..3, S1 in S+1-Len..S, S1>0])
+                         + sum([M[Len,Sr,Z1,S] : Len in 2..3, Z1 in Z+1-Len..Z, Z1>0])
+    end,
+    % All strips have different white/gray patterns:
+    Sig = new_array(3,2,N,N), % white/gray signature of strip starting here
+    % Len = 1:
+    foreach(Z in 1..N, S in 1..N)   Sig[1,Wr,Z,S] #= M[1,Wr,Z,S] * (1 + C[Z,S]) end,
+    all_different_except_0(array_matrix_to_list(Sig[1,Wr])),
+    % Len = 2 (pattern 1,0 = 0,1 => we store the minimum when reading the strip forward or backward):
+    foreach(Z in 1..N, S in 1..N-1) Sig[2,Wr,Z,S] #= M[2,Wr,Z,S] * (1 + min(2*C[Z,S] + C[Z,S+1], C[Z,S] + 2*C[Z,S+1])) end,
+    foreach(Z in 1..N-1, S in 1..N) Sig[2,Sr,Z,S] #= M[2,Sr,Z,S] * (1 + min(2*C[Z,S] + C[Z+1,S], C[Z,S] + 2*C[Z+1,S])) end,
+    all_different_except_0(array_matrix_to_list(Sig[2,Wr]) ++ array_matrix_to_list(Sig[2,Sr])),
+    % Len = 3 (pattern 1,0,0 = 0,0,1):
+    foreach(Z in 1..N, S in 1..N-2) Sig[3,Wr,Z,S] #= M[3,Wr,Z,S] * (1 + min(4*C[Z,S] + 2*C[Z,S+1] + C[Z,S+2], C[Z,S] + 2*C[Z,S+1] + 4*C[Z,S+2])) end,
+    foreach(Z in 1..N-2, S in 1..N) Sig[3,Sr,Z,S] #= M[3,Sr,Z,S] * (1 + min(4*C[Z,S] + 2*C[Z+1,S] + C[Z+2,S], C[Z,S] + 2*C[Z+1,S] + 4*C[Z+2,S])) end,
+    all_different_except_0(array_matrix_to_list(Sig[3,Wr]) ++ array_matrix_to_list(Sig[3,Sr])),
+    solve(M), Gray = " *",
+    foreach(Z in 1..N, S in 1..N)
+        Strip = cond(M[1,Wr,Z,S]=1, "X  ", cond(M[2,Wr,Z,S]=1, "X> ", cond(M[2,Sr,Z,S]=1, "Xv ", 
+                                           cond(M[3,Wr,Z,S]=1, "X>>", cond(M[3,Sr,Z,S]=1, "Xvv", "   "))))), 
+        printf("%c%s|", Gray[1+C[Z,S]], Strip), if S = N then nl end
+    end.
+
+input(0, C) =>
+    C = {{0,1,1,1,0},
+         {0,1,0,0,1},
+         {1,1,0,1,0},
+         {0,1,1,0,0},
+         {1,0,0,1,0}}. /*
+ X  |*Xvv|*X>>|*   |    |
+ Xvv|*   | Xv | X> |*   |
+*   |*   |    |*Xvv| Xvv|
+    |*X> |*   |    |    |
+*X>>|    |    |*   |    | CPU time 3.432 seconds, korrekt */
+input(1, C) =>
+    C = {{0,1,1,1,1},
+         {1,0,0,0,0},
+         {1,0,1,1,0},
+         {1,1,1,1,0},
+         {0,0,0,0,0}}. /*
+ X>>|*   |*   |*Xvv|*Xvv|
+*Xvv| X> |    |    |    |
+*   | Xvv|*Xv |*   |    |
+*   |*   |*   |*X> |    |
+ X  |    | X>>|    |    | CPU time 2.017 seconds, korrekt */

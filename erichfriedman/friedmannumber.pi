@@ -1,0 +1,48 @@
+% equation(L,LT,RT): L is the list of numbers which are the leaves
+%    in the arithmetic terms LT and RT - from left to right. The 
+%    arithmetic evaluation yields the same result for LT and RT.
+% Example: test_equation([2,3,5,7,11])
+% Example: test_equation([6,1,3,4,24])
+import util.
+digits(X) = [to_int(C) : C in to_string(X)].
+
+friedman(X) =>
+   term(digits(X),LT),         % construct the left term
+   LT =:= X,                  % evaluate and compare the terms
+   printf("%w = %d%n", LT, X).
+
+% term(L,T): L is the list of numbers which are the leaves in
+%    the arithmetic term T - from left to right.
+
+term([X],T) => T = X.           % a number is a term in itself
+term(L,T) =>                    % general case: binary term
+   split(L,LL,RL),              % decompose the list L
+   term(LL,LT),                 % construct the left term
+   term(RL,RT),                 % construct the right term
+   binterm(LT,RT,T).            % construct combined binary term
+
+% binterm(LT,RT,T): T is a combined binary term constructed from
+%    left-hand term LT and right-hand term RT
+
+binterm(LT,RT,T) ?=> T = $(LT+RT).
+binterm(LT,RT,T) ?=> T = $(LT-RT).
+binterm(LT,RT,T) ?=> T = $(-LT+RT).
+binterm(LT,RT,T) ?=> T = $(LT*RT).
+binterm(LT,RT,T) ?=> T = $(LT**RT).
+binterm(LT,RT,T), RT !== 0 => T = $(LT/RT).
+
+% split(L,L1,L2): split the list L into non-empty parts L1 and L2
+% such that their concatenation is L
+
+split(L,L1,L2) => append(L1,L2,L), L1 = [_|_], L2 = [_|_].
+
+% test_equation(L): find all solutions to the problem as given by the list of
+%    numbers L, and print them out, one solution per line.
+
+main => 
+    friedman(127), % - 1 + 2 ** 7 = 12
+    friedman(736), % 7 + 3 ** 6 = 736
+    friedman(1285), % (1 + 2 ** 8) * 5 = 1285
+    friedman(3125). % (3 + 1 * 2) ** 5 = 3125
+    % The program does not find solutions for all Friedman numbers :-( 
+    % (not terminatiing oder division by zero error)

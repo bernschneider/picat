@@ -1,0 +1,55 @@
+/* Janko Erich Friedman Hop, Skip and Jump - using hcp(Vs,Es)
+https://erich-friedman.github.io/puzzle/hop/ */
+import util, sat. 
+% Print '-' bzw. '|' if a directed edge 1 -> 2 or 2 -> 1 exists (used in rows 43ff):
+edge(EMap, Z1,S1, Z2,S2) = 1 + EMap.get({Z1,S1, Z2,S2} ,0) + EMap.get({Z2,S2, Z1,S1}, 0). 
+main ?=>	
+    A = {{0,0,0,0,0,0,3}, % 1 = Dot
+         {0,0,0,0,0,0,0},
+         {0,0,0,0,1,0,0},
+         {0,0,0,0,0,0,0},
+         {0,1,0,0,0,0,0},
+         {0,0,0,0,0,0,0},
+         {2,0,0,0,0,0,0}}, N = len(A), Start = (N,1), Finish = (1,N),
+    Vs = [{(Z,S), _} : Z in 1..N, S in 1..N], % possible vertices
+    VMap = new_map(), foreach ({(Z,S),B} in Vs) VMap.put({Z,S}, B) end,
+    VMap.get({N,1}) #= 1, VMap.get({1,N}) #= 1, 
+    Typ = new_array(N,N), Typ :: 0..3, % 1=Hop, 2=Skip, Jump=3
+    Typ[N,1] #= 1,
+    foreach(Z in 1..N, S in 1..N) 
+        Typ[Z,S] #= 0 #<=> VMap.get({Z,S}) #= 0,
+        if A[Z,S] > 0 then Typ[Z,S] #> 0 end % part of the path
+    end,
+    %        F ->  S (schließt den Loop)
+    Es = [{Finish, Start, 1}] 
+         ++ [{(Z,S), (Z1,S1), _} : {(Z,S),_} in Vs, {(Z1,S1),_} in Vs, (Z1,S1) != (Z,S),
+                                   ((Z1 = Z, abs(S1 - S) =< 3); (S1 = S, abs(Z1 - Z) =< 3))], % mögliche Kanten
+    EMap = new_map(), foreach ({(Z1,S1),(Z2,S2),B} in Es) EMap.put({Z1,S1,Z2,S2}, B) end,
+    % Rückwärts gehen ist verboten: 
+    foreach({(Z1,S1), (Z2,S2), B1} in Es, {(Z2,S2), (Z3,S3), B2} in Es)
+        if Z1 = Z3, sign(S3 - S2) != sign(S2 - S1) then B1 + B2 #< 2 end,
+        if S1 = S3, sign(Z3 - Z2) != sign(Z2 - Z1) then B1 + B2 #< 2 end
+    end,
+    hcp(Vs, Es), % die gerichteten Kanten in Es formen einen Hamilton-Cycle auf Vs
+	% The path must alternately hop (move 1 square), skip (move 2 squares), and jump (move 3 squares):
+    foreach({(Z1,S1), (Z2,S2), B} in Es, (Z1,S1)!=Finish) % take out the edge from F to S!
+        B #= 1 #=> Typ[Z1,S1] #= abs(Z2 - Z1) + abs(S2 - S1),
+        B #= 1 #=> Typ[Z2,S2] #= (Typ[Z1,S1] mod 3) + 1
+	end, 
+    solve(vars(Typ) ++ values(VMap) ++ values(EMap)),
+    println([{(Z,S), (Z1,S1)} : {(Z,S), (Z1,S1), B} in Es, B = 1]),
+    println(Typ),
+    M = {{0 : _ in 1..N} : _ in 1..N},
+    I = 1, M[N,1] := 1, Z3 = N, S3 = 1, % Idx = find_first_of(Es, {(N,1), (Z3,S3), 1}),
+    while(Z3 != 1, S3 != N)
+        Idx = find_first_of(Es, {(Z3,S3), _, 1}),
+        if Idx < 0 then println("Error") end,
+        {_, (Z4,S4), 1} = Es[Idx],
+        Z3 := Z4, S3 := S4, I := I + 1, M[Z3,S3] := I, println({Z3,S3,I})    
+    end,
+    println(i=I), M[1,N] := I+1, println({1,N,I+1}),
+    foreach(Z in 1..N, S in 1..N)
+        printf("%2s|", cond(M[Z,S] > 0, to_string(M[Z,S]), "")), if S = N then nl end
+    end.
+ /* 
+ */

@@ -1,0 +1,31 @@
+/* Janko Erich Friedman Color Mazes - using hcp(Vs,Es)
+https://erich-friedman.github.io/puzzle/color/ */
+import sat. 
+main ?=>
+    Ro=1, Ge=2, Bl=3,
+    A = {{Ge,Ro,Ro, 0},
+         {Ro,Bl,Bl,Bl}, 
+         {Ge,Ro,Ro,Ro}, 
+         { 0, 0,Ge,Ro}}, N = len(A), Start = (N,1), Finish = (1,N), 
+    Vs = [{(Z,S), _} : Z in 1..N, S in 1..N], % mögliche Vertices
+    Es = [{Finish, Start, 1}] ++ [{(Z,S), (Z1,S1), _} : Z in 1..N, S in 1..N, Z1 in 1..N, S1 in 1..N, abs(Z1 - Z) + abs(S1 - S) = 1 ], % mögliche Kanten
+    hcp(Vs, Es), % die gerichteten Kanten in Es formen einen Hamilton-Cycle auf Vs
+    VMap = new_map(), foreach ({(Z,S),B} in Vs) VMap.put({Z,S}, B) end,
+    EMap = new_map(), foreach ({(Z1,S1),(Z2,S2),B} in Es) EMap.put({Z1,S1,Z2,S2}, B) end,
+    Cnt :: 1..N, % wie oft werden die drei Farben jeweils passiert?
+    foreach(C in[Ro, Ge, Bl])
+        sum([VMap.get({Z,S}) : Z in 1..N, S in 1..N, A[Z,S] = C]) #= Cnt
+    end,
+    solve(vars(Vs) ++ vars(Es) ++ [Cnt]),
+    foreach(Z in 1..N, S in 1..N) 
+        C = cond((Z,S)=(1,N), 'F', ' '),
+        if     EMap.get({Z,S, Z-1,S}, 0) = 1 then C := '^' elseif EMap.get({Z,S, Z+1,S}, 0) = 1 then C := 'v'
+        elseif EMap.get({Z,S, Z,S-1}, 0) = 1 then C := '<' elseif EMap.get({Z,S, Z,S+1}, 0) = 1 then C := '>' 
+        end,
+        printf("%c|", C), if S = N then nl end
+    end, nl, fail. /*
+ | | |F|
+ | |>|^|
+>|v|^| |
+^|>|^| |
+CPU time 0.079 seconds, no ore solutions, korrekt */

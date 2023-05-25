@@ -1,0 +1,62 @@
+/* Janko Erich Freidmann Line Segment
+https://erich-friedman.github.io/puzzle/segment/ */
+import util, sat.  
+
+good(L, Dir) =>
+    Len = len(L), Cnt = new_array(Len),
+    Cnt[1] #= (L[1] #= Dir),
+    foreach(I in 2..Len)
+        L[I] #=  Dir #=>  Cnt[I] #= Cnt[I-1] + 1,
+        L[I] #!= Dir #=> (Cnt[I] #= 0 #/\ Cnt[I-1] notin [1,2,5]) % auch mehrere Segmente hintereinander, z.B. 3+3, 3+4, 4+4
+    end,
+    Cnt[Len] notin [1,2,5].
+
+main(Nr) =>   
+    input(Nr, NZ, NS, C),                 % 123 4 = hvdd 
+    M = new_array(NZ,NS), M :: 1..4, Chr = "-|/\\",
+    foreach((Z,S,Dir) in C)
+        if     Dir = h then M[Z,S] #= 1 % -
+        elseif Dir = v then M[Z,S] #= 2 % |
+        else                M[Z,S] #> 2 % D1 oder D2
+        end  
+    end,
+    D1 = [[M[R,S-R] : R in 1..NZ, 0<S-R, S-R=<NS] : S in 2..NZ+NS],    % Diagonalen /
+    % [[11],[12,21],[13,22,31],[14,23,32,41],[15,24,33,42,51],[16,25,34,43,52,61],[17,26,35,44,53,62],[18,27,36,45,54,63],[28,37,46,55,64],[38,47,56,65],[48,57,66],[58,67],[68]]
+    D2 = [[M[R,D+R] : R in 1..NZ, 0<D+R, D+R=<NS] : D in -NZ+1..NZ], % Diagonalen \
+    % [[61],[51,62],[41,52,63],[31,42,53,64],[21,32,43,54,65],[11,22,33,44,55,66],[12,23,34,45,56,67],[13,24,35,46,57,68],[14,25,36,47,58],[15,26,37,48],[16,27,38],[17,28],[18]]
+    foreach(L in M.rows())    good(L, 1) end, % -
+    foreach(L in M.columns()) good(L, 2) end, % |
+    foreach(L in D1)          good(L, 3) end, % /
+    foreach(L in D2)          good(L, 4) end, % 
+    solve(M),
+    foreach(Z in 1..NZ, S in 1..NS) 
+        printf("%c", Chr[M[Z,S]]),
+        if S = NS then nl end 
+    end. 
+    /* 
+ */
+input(1, NZ, NS, C) =>
+    NZ = 6, NS = 8, C = [(5,2,d), (5,6,v)]. /*
+||----/|
+||---//|
+||////||
+|////|||
+//---|||
+/----||| korrekt */
+input(2, NZ, NS, C) =>
+    NZ = 6, NS = 8, C = [(4,2,d), (5,1,h)]. /*
+||----||
+||\/\/||
+||/\/\||
+|/\/\/\|
+---\/---
+---/\--- korrekt */
+input(10, NZ, NS, C) =>
+    NZ = 7, NS = 8, C = [(5,1,h), (7,5,d)]. /*
+||||||||
+||||||||
+||||||||
+||\|\/||
+---\/\/|
+---/\/\|
+----/--- korrekt */

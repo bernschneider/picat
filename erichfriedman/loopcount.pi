@@ -1,0 +1,54 @@
+/* Janko Erich Friedman Loop Count Puzzles - using hcp(Vs,Es)
+https://erich-friedman.github.io/puzzle/loopcount/ 
+Find a closed loop that travels horizontally or vertically though each square exactly once */
+import sat. 
+% Print '-' bzw. '|' if a directed edge 1 -> 2 or 2 -> 1 exists (used in rows 43ff):
+edge(EMap, Z1,S1, Z2,S2) = 1 + EMap.get({Z1,S1, Z2,S2} ,0) + EMap.get({Z2,S2, Z1,S1}, 0). 
+main ?=>
+    A = {{0,0,0,0,0,0},
+         {0,0,0,0,0,0}, 
+         {0,2,0,0,0,2}, 
+         {0,0,2,0,0,0}, 
+         {0,0,0,0,0,0}, 
+         {0,2,0,0,0,0}}, N = len(A),
+    Grid = new_array(N,N), Grid :: 0..1,
+    foreach(Z in 1..N, S in 1..N) Grid[Z,S] = 1 end, 
+    Es = [{(Z,S), (Z1,S1), _} : Z in 1..N, S in 1..N, Z1 in 1..N, S1 in 1..N, abs(Z1 - Z) + abs(S1 - S) = 1],
+    EMap = new_map(), foreach ({(Z1,S1),(Z2,S2),B} in Es) EMap.put({Z1,S1,Z2,S2}, B) end,
+    EMap.get({1,1,1,2}) #= 1, % breaking forward/backward symmetry
+    hcp_grid(Grid, Es), % die gerichteten Kanten in Es formen einen Hamilton-Cycle auf Grid
+    % Count the segments in line forward and backward:
+    FW = new_array(N,N), FW :: 1..N, BW = new_array(N,N), BW :: 1..N, 
+    foreach({(Z1,S1), (Z2,S2), B1} in Es, {(Z2,S2), (Z3,S3), B2} in Es) % two consecutive steps
+        if (Z1 = Z3; S1 = S3) 
+        then B1 + B2 #= 2 #=> (FW[Z3,S3] #= 1 + FW[Z2,S2] #/\ BW[Z1,S1] #= 1 + BW[Z2,S2])
+        else B1 + B2 #= 2 #=> (FW[Z3,S3] #= 1 #/\ BW[Z1,S1] #= 1)
+        end,
+        % bei loopcount_last muss die folgende Bedingung auskommentiert werden (liefert hier aber eine eindeutige Lösung):
+        if A[Z2,S2] > 0, (Z1 = Z3; S1 = S3) then B1 + B2 #< 2 end % an allen Vorgabefeldern abbiegen!
+    end,
+    % Each number is the sum of the lengths of the two segments that pass through it:
+    foreach(Z in 1..N, S in 1..N, A[Z,S] > 0) A[Z,S] #= FW[Z,S] + BW[Z,S] end,
+    solve(vars(Grid) ++ vars(Es) ++ values(EMap) ++ vars(FW) ++ vars(BW)), %  
+    SHor = " -", SVer = " |",
+    foreach(Z in 1..N-1)
+    	foreach(S in 1..N-1) printf("%s%c", format(Grid[Z,S], A[Z,S]), SHor[edge(EMap,Z,S,Z,S+1)]) end, 
+        println(format(Grid[Z,N], A[Z,N])),
+    	foreach(S in 1..N) printf("%c ",  SVer[edge(EMap,Z,S,Z+1,S)] ) end, nl
+    end,
+    foreach(S in 1..N-1) printf("%s%c", format(Grid[N,S], A[N,S]), SHor[edge(EMap,N,S,N,S+1)]) end, 
+    println(format(Grid[N,N], A[N,N])),
+    fail.  /* 
+*-*-*-*-*- 
+|         | 
+*-*-*-* *- 
+      | |   
+*-2 *-* *-2
+| | |     | 
+* *-2 *-*- 
+|     |     
+* *-* *-*- 
+| | |     | 
+*-2 *-*-*- 
+CPU time 0.412 seconds, no more solutions, korrekt */
+format(V, X) = cond(X > 0, to_string(X), cond(V = 1, "*", " ")).

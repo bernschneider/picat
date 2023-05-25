@@ -1,0 +1,112 @@
+/* Janko Erich Friedman Knight Tour
+Algorithms see https://www.dbs.ifi.lmu.de/Lehre/GIS/SS2009/Skript/Kap-06.pdf
+https://erich-friedman.github.io/puzzle/knighttour/ */
+import util, sat.
+main(No) =>
+    input(No, Sh), NZ = len(Sh), NS = len(Sh[1]),
+    Vs = [{(Z,S), _} : Z in 1..NZ, S in 1..NS], 
+    VMap = new_map(), foreach ({(Z,S),B} in Vs) VMap.put({Z,S}, B) end,
+    Es =  [{(Z,S), (Z1,S1), _} : {(Z,S),_} in Vs, {(Z1,S1),_} in Vs, DZ = abs(Z1 - Z), DS = abs(S1 - S), ((DZ=1,DS=2);(DZ=2,DS=1))],
+    hcp(Vs, Es), % die gerichteten Kanten in Es formen einen Hamilton-Cycle auf Vs
+    % The tour does not cross itself (see 6.2 of above linked pdf):
+    foreach({(A1Z,A1S),(A2Z,A2S),A} in Es, {(B1Z,B1S),(B2Z,B2S),B} in Es)
+        % (1-t1)*A1 + t1*A2 = (1-t2)*B1 + t2*B2 (Parameterdarstellung)
+        Nom1 =   (B1Z-A1Z)*(B2S-B1S)-(B1S-A1S)*(B2Z-B1Z), % t1 = Nom1/Denom1
+        Denom1 = (A2Z-A1Z)*(B2S-B1S)-(A2S-A1S)*(B2Z-B1Z),
+        Nom2 =   (A1Z-B1Z)*(A2S-A1S)-(A1S-B1S)*(A2Z-A1Z), % t2 = Nom2/Denom2
+        Denom2 = (B2Z-B1Z)*(A2S-A1S)-(B2S-B1S)*(A2Z-A1Z),
+        % Crossing <=> Denom1 != 0 /\ 0 <= t1 <= 1 /\ same for t2:  
+        if Denom1 != 0, sign(Nom1) = sign(Denom1), abs(Nom1) =< abs(Denom1),
+           Denom2 != 0, sign(Nom2) = sign(Denom2), abs(Nom2) =< abs(Denom2) 
+        then A + B #< 2 end
+    end,
+    % Of the 6 shaded squares, 2 centers will be ON the loop, 2 centers will be INSIDE the loop, and 2 centers will be OUTSIDE the loop:
+    ShPos = [(Z,S,_) : Z in 1..NZ, S in 1..NS, Sh[Z,S] = 1],
+    Pos = [P : (_,_,P) in ShPos], Pos :: 1..3, % 1=ON, 2=OUT, 3=IN
+    global_cardinality(Pos, $[1-2,2-2,3-2]),
+    % Crossing Vertex Z|S <=> a vertical line through vertex Z|S is crossing the loop
+    X = new_array(NZ,NS), X :: 0..1,
+    foreach({(_,Sv), (Z,S), Bv} in Es, {(Z,S), (_,Sn), Bn} in Es)
+        VMap.get({Z,S}) #= 0 #=> X[Z,S] #= 0,
+        if ((Sv < S, S < Sn); (Sn < S, S < Sv)) then % S liegt zwischen Sv und Sn
+            Bv + Bn #= 2 #=> X[Z,S] #= 1 else Bv + Bn #= 2 #=> X[Z,S] #= 0 end
+    end,
+    % Punkt in Polygon-Test (see 6.3 of the above linked pdf):
+    foreach((Z,S,P) in ShPos)
+        % Berechne Zahl der Edge-Schnittpunkte für die Strecke von Z|S nach oben:
+        CntX #= sum([B : {(Z1,S1), (Z2,S2), B} in Es, S1+S2=2*S, abs(Z2-Z1)=1, max(Z1,Z2) =< Z]), 
+        % Berechne Zahl der crossing vertices auf der Strecke von Z|S nach oben (PB):
+        CntV #= sum([X[Z1,S] : Z1 in 1..Z-1]),
+        P #= 1 #<=> VMap.get({Z,S}) #= 1,
+        P #> 1 #=> P - 2 #= (CntX + CntV) mod 2
+    end,
+    solve(Pos ++ vars(Vs) ++ vars(Es) ++ vars(X)), println(Pos),
+    M = {{[] : _ in 1..NS} : _ in 1..NZ}, Hdir = "<< >>", Vdir = "^^ vv",
+    foreach({(Z1,S1),(Z2,S2),1} in Es) DZ = Z2 - Z1, DS = S2 - S1, M[Z1,S1] := [DZ,DS] end,
+    foreach(Z in 1..NZ, S in 1..NS)
+        if M[Z,S] = [] then print("   |") 
+        else [DZ,DS] = M[Z,S], printf("%s%s|", times(abs(DS), Hdir[DS+3]), times(abs(DZ), Vdir[DZ+3])) end, 
+        if S = NS then nl end
+    end.
+
+input(0, Sh) =>
+    Sh = {{1,0,0,0,0},
+          {0,0,0,0,0},
+          {0,1,1,0,0},
+          {0,0,1,0,1},
+          {0,0,1,0,0}}. /*
+   |   |<vv|   |   |
+   |   |   |   |   |
+   |>vv|   |<^^|   |
+   |   |   |   |   |
+   |   |>^^|   |   | korrekt */
+input(1, Sh) =>
+    Sh = {{0,0,0,0,0},
+          {0,0,1,1,0},
+          {0,0,0,1,0},
+          {1,0,0,0,0},
+          {1,0,1,0,0}}. /*
+   |   |   |<vv|   |
+   |>>^|   |   |<vv|
+   |>vv|>>^|   |   |
+>^^|   |   |<<^|   |
+   |   |<<^|   |   | korrekt */
+input(2, Sh) =>
+    Sh = {{0,0,0,0,1},
+          {0,0,0,0,0},
+          {1,1,1,0,0},
+          {0,0,0,1,0},
+          {0,1,0,0,0}}. /*
+>>v|   |   |   |<vv|
+   |   |>>^|   |   |
+   |<^^|   |>vv|   |
+   |   |<<v|   |   |
+>^^|   |   |   |<<^| korrekt */
+input(3, Sh) =>
+    Sh = {{1,1,0,0,0},
+          {0,1,0,0,0},
+          {0,0,1,0,0},
+          {0,0,0,1,1},
+          {0,0,0,0,0}}. /*
+>vv|   |   |   |   |
+   |   |<<^|   |   |
+   |>>v|   |   |   |
+   |   |   |<^^|   |
+   |   |   |   |   | korrekt */
+input(9, Sh) =>
+    Sh = {{0,0,0,1,0,0,0},
+          {0,1,0,0,0,0,0},
+          {0,0,0,1,0,1,0},
+          {1,0,0,0,0,0,1}}. /*
+>vv|   |   |   |<<v|   |   |
+   |   |<<^|<vv|   |<<v|   |
+   |>>^|   |>^^|>>v|   |   |
+   |   |>>^|   |   |   |<^^| korrekt */
+input(24, Sh) =>
+    Sh = {{0,0,1,0,0,0},
+          {1,0,1,0,0,0},
+          {0,0,1,0,0,0},
+          {0,1,0,0,0,0},
+          {0,0,0,1,0,0}}. /*
+no solution :-( */
+times(N, C) = [C : _ in 1..N]. % produce a string with N times the character C (used in line 31)

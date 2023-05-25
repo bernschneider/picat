@@ -1,0 +1,47 @@
+/* Janko Erich Friedman Direction Selection
+https://erich-friedman.github.io/puzzle/direction/ */
+import sat, util.
+
+main(No) =>
+    input(No, Pf), N = len(Pf),
+    M = new_array(N,N), M :: [0,1], % 1=shaded 
+    Mvars = vars(M), sum(Mvars) #> 0,
+    foreach(Z in 1..N, S in 1..N)
+        if      Pf[Z,S]=r_ then L = [M[Z,S1]  : S1 in S+1..N]
+        elseif  Pf[Z,S]=l_ then L = [M[Z,S1]  : S1 in 1..S-1]
+        elseif  Pf[Z,S]=u_ then L = [M[Z1,S]  : Z1 in Z+1..N]
+        elseif  Pf[Z,S]=o_ then L = [M[Z1,S]  : Z1 in 1..Z-1]
+        elseif  Pf[Z,S]=ru then L = [M[Z1,S1] : Z1 in Z+1..N, S1 in S+1..N, Z1-S1=Z-S]
+        elseif  Pf[Z,S]=lo then L = [M[Z1,S1] : Z1 in 1..Z-1, S1 in 1..S-1, Z1-S1=Z-S]
+        elseif  Pf[Z,S]=ro then L = [M[Z1,S1] : Z1 in 1..Z-1, S1 in S+1..N, Z1+S1=Z+S]
+        elseif  Pf[Z,S]=lu then L = [M[Z1,S1] : Z1 in Z+1..N, S1 in 1..S-1, Z1+S1=Z+S]
+        end,
+        M[Z,S] #=> sum(L) #= 2
+    end,
+    solve(vars(M)), 
+    foreach(Z in 1..N, S in 1..N)
+        if M[Z,S] = 1 then printf("%w|", Pf[Z,S])
+                  else print("  |") end,
+        if S=N then nl end
+    end.
+
+input(0, Pf) =>
+    Pf = {{ru,ru,u_,lu},
+          {r_,r_,lu,l_},
+          {ro,r_,l_,lo},
+          {o_,r_,lo,lo}}. /*
+ru|ru|u_|  |
+  |r_|lu|l_|
+ro|r_|l_|lo|
+o_|  |  |  | CPU time 0.001 seconds korrekt */
+input(14, Pf) =>
+    Pf = {{u_,r_,r_,lu,lu},
+          {r_,ru,ru,lu,l_},
+          {ru,r_,u_,o_,lo},
+          {o_,o_,l_,l_,lo},
+          {r_,o_,lo,o_,lo}}. /*
+  |  |  |lu|  |
+r_|ru|  |lu|  |
+ru|r_|u_|o_|  |
+o_|o_|l_|  |  |
+  |  |lo|  |lo| CPU time 0.001 seconds, korrekt */

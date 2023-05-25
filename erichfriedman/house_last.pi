@@ -1,0 +1,38 @@
+/* Janko Erich Friedman House Puzzles - last
+https://erich-friedman.github.io/puzzle/house/ */
+import sat. 
+main ?=>	
+    C   = {{1,0,0,0,0,1,1}, % 1 = Haus
+           {0,0,0,0,1,0,0},
+           {0,0,1,1,0,0,0},
+           {0,0,0,0,0,0,0},
+           {0,1,0,0,1,0,0},
+           {1,1,0,1,0,0,0},
+           {0,0,1,1,1,0,0}}, N = len(C), 
+    Zs = [Z : Z in 1..N, S in 1..N, C[Z,S]=1], 
+    Ss = [S : Z in 1..N, S in 1..N, C[Z,S]=1], Cnt = len(Ss),
+    P = new_list(Cnt), P :: 1..Cnt, assignment(P, P), % wer ist der Partner von Haus Nr. I? P[P[I]] = I
+    Dist = new_list(Cnt), Dist :: 1..2*N*N,
+    foreach(I in 1..Cnt)
+        element(P[I], Zs, ZP), element(P[I], Ss, SP), % Auf (ZP,SP) befindet sich der Partner von Haus Nr. I 
+        Dist[I] #= (Zs[I] - ZP)**2 + (Ss[I]- SP)**2 
+    end,
+    nvalue(2, Dist), % there are only two different distances
+    solve(P ++ Dist),
+    M = {{0 : _ in 1..N} : _ in 1..N}, No = 0,
+    foreach(I in 1..Cnt)
+        Z = Zs[I], S = Ss[I], J = P[I],
+    	if M[Z,S] = 0 then No := No + 1, M[Z,S] := No, M[Zs[J],Ss[J]] := No end
+    end,
+    foreach(Z in 1..N, S in 1..N)
+        if M[Z,S] > 0 then printf("%d|", M[Z,S]) else print(" |") end,
+        if S = N then nl end
+    end, fail. /* Felder mit gleichen Zahlen sind miteinander verbunden:
+1| | | | |2|3| 
+ | | | |4| | |
+ | |5|6| | | |
+ | | | | | | |
+ |1| | |2| | |
+7|3| |4| | | |
+ | |6|5|7| | |
+CPU time 1.106 seconds, no more solutions, correct */ 

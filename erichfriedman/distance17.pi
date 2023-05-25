@@ -1,0 +1,29 @@
+/* Janko Erich Friedman Distance Puzzles
+Fill in the circles below with different integers starting with 1 */
+import util,sat. 
+main ?=>
+    A = {{0,0,0,0, 1,1,1,1},
+         {1,0,1,0, 1,0,1,1},
+         {1,1,1,1, 1,1,1,1}}, NZ = len(A), NS = len(A[1]),
+    N = sum(array_matrix_to_list(A)),
+    Zs = new_list(N), Ss = new_list(N), Zs :: 1..NZ, Ss :: 1..NS, % Zeile/Spalte der Zahl I
+    foreach(I in 1..N) matrix_element(A, Zs[I], Ss[I], 1) end,
+    Dist = new_list(N-1), % Distance of the consecutive integers
+    foreach(I in 1..N-1)
+        Dist[I] #= abs(Zs[I+1] - Zs[I])**2 + abs(Ss[I+1] - Ss[I])**2,
+        foreach(J in I+1..N) Zs[I] #!= Zs[J] #\/ Ss[I] #!= Ss[J] end % all different!
+    end,
+    % Each pair of consecutive integers is farther apart than the previous pair:
+    increasing_strict(Dist),
+    solve(Zs ++ Ss ++ Dist), 
+    M = {{0 : _ in 1..NS} : _ in 1..NZ}, foreach(I in 1..N) M[Zs[I], Ss[I]] := I end,
+    foreach(Z in 1..NZ)
+    	foreach(S in 1..NS) 
+            if M[Z,S] > 0 then printf("%2d|", M[Z,S]) else print("  |") end
+        end, nl 
+    end,
+    nl, fail.  /* 
+  |  |  |  | 5| 3|10|16|
+15|  | 9|  | 2|  | 8|14|
+17|13|11| 7| 1| 4| 6|12|
+CPU time 0.548 seconds, no more solutions, korrekt */

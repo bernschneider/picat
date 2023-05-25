@@ -1,0 +1,41 @@
+/* Janko Erich Friedman Grape
+https://erich-friedman.github.io/puzzle/grapes/ */
+import util, sat.
+main(P) ?=>    
+    [R,Y,G] :: 1..99, % colored grapes´ numbers Red, Yellow, Green
+    input(P, C), N = len(C),
+    % If and only if two grapes contain the same number, they are colored the same color:
+    M = [[cond(X = 0, _, cond(X = r, R, cond(X = y, Y, G))) : X in Line]: Line in C], 
+    all_different([M[I,J] : I in 1..N, J in 1..N+1-I, C[I,J] = 0]),
+    % Each number in the top row of grapes is a single digit:
+    M[1] :: 1..9,
+    % Each number not in the top row is the sum of the numbers in the two grapes just above it:
+    foreach(J in 1..N-1, I in 1..N-J) M[I+1,J] #= M[I,J] + M[I,J+1] end,
+    solve(M),  
+    foreach(I in 1..N, J in 1..N+1-I)
+        printf("%3d ", M[I,J]), 
+        if J = N+1-I then 
+            nl, 
+            foreach(_ in 1..I) print("  ") end
+        end
+    end, nl, fail.
+
+input(0,C) => C = [[r,y,y,g], [0,r,0], [g,0], [0]]. /* 
+ 2 1 1 5
+  3 2 6
+   5 8
+   13 correct */
+input(15,C) => C = [[r,0,0,0,0,r], [y,0,0,y,0], [0,0,0,g], [g,0,0], [0,0], [0]]. /* 
+  8   2   4   1   9   8 
+   10   6   5  10  17 
+     16  11  15  27 
+       27  26  42 
+         53  68 
+          121 correct */
+input(16,C) => C = [[0,r,0,0,0,0], [y,0,0,0,r], [0,g,y,0], [0,0,g], [0,0], [0]]. /* 
+  9   6   8   3   1   5 
+   15  14  11   4   6 
+     29  25  15  10 
+       54  40  25 
+         94  65 
+          159 correct */

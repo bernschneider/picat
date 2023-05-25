@@ -1,0 +1,10 @@
+/* Janko Erich Friedman Gold Star
+https://erich-friedman.github.io/puzzle/star/ */
+import cp.
+
+main1 =>
+    Vars = [A,B,C,D,E,F,G,H,I,J], Vars :: 0..9, all_different(Vars),
+    B+C#=D*E, I+F#=C-A, I+H#=G-E, A*D#=G*J,
+    solve(Vars),
+    printf("%d+%d=%d*%d, %d+%d=%d-%d, %d+%d=%d-%d, %d*%d=%d*%d", B,C,D,E, I,F,C,A, I,H,G,E, A,D,G,J). /*
+8+7=3*5, 0+1=7-6, 0+4=9-5, 6*3=9*2, korrekt */    

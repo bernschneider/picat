@@ -1,0 +1,42 @@
+/* Janko Erich Friedman Hamiltonian Mazes Nr. 1
+https://erich-friedman.github.io/puzzle/ham/ */
+import util, sat. 
+ % I and I1 are neighbors:
+nb(L, I, I1) => foreach(J in min(I,I1)+1..max(I,I1)-1) L[J] = 0 end.
+% search in L starting at position I in direction Dir for next 1:
+next(L, I, Dir) = I1 => J = I + Dir, while(0 < J, J =< len(L), L[J] = 0) J := J + Dir end, I1 = J.
+main ?=>	
+    A = {{1,1,0,1,1,1}, % 1 = is a vertex
+         {1,0,1,1,1,1},
+         {1,1,1,0,1,1},
+         {1,1,1,1,1,1},
+         {1,0,1,1,1,1},
+         {1,1,1,1,0,1}}, N = len(A), At = A.transpose(),
+    Vs = [{(Z,S), 1} : Z in 1..N, S in 1..N, A[Z,S] = 1], % all vertices
+    Es = [{(Z,S), (Z1,S1), _} : {(Z,S),_} in Vs, {(Z1,S1),_} in Vs, (Z,S) != (Z1,S1),
+            ((Z = Z1, nb(A[Z],S,S1)); S = S1, nb(At[S],Z,Z1)) ], 
+    hcp(Vs, Es), % the directed edges in Es form a Hamilton Cycle on Vs
+    EMap = new_map(), foreach ({(Z1,S1),(Z2,S2),B} in Es) EMap.put({Z1,S1,Z2,S2}, B) end,
+    % Block missing edges:
+    foreach({Z,S,Z1,S1} in [{5,4,5,5}, {3,2,4,2}, {1,4,2,4}, {4,4,5,4}, {3,5,4,5}]) 
+        EMap.get({Z,S,Z1,S1}) #= 0, EMap.get({Z1,S1,Z,S}) #= 0 
+    end,
+    EMap.get({1,1,1,2}) #= 1, % breaking forward/ backward symmetry
+    solve(values(EMap)), 
+    foreach(Z in 1..N, S in 1..N) 
+        C = ' ',
+        if     EMap.get({Z,S, Z,next(A[Z], S, -1)},   0) = 1 then C := '<' 
+        elseif EMap.get({Z,S, Z,next(A[Z], S, 1)},    0) = 1 then C := '>'
+        elseif EMap.get({Z,S, next(At[S], Z, -1), S}, 0) = 1 then C := '^' 
+        elseif EMap.get({Z,S, next(At[S], Z, 1), S},  0) = 1 then C := 'v' 
+        end,
+        printf("%c|", C), if S = N then nl end
+    end, nl, fail. 
+/*
+>|>| |>|>|v|
+^| |v|<|v|<|
+^|<|<| |>|v|
+>|>|>|^|v|<|
+^| |v|<|>|v|
+^|<|<|^| |<|
+CPU time 0.032 second, no more solutions, korrekt */

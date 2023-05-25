@@ -1,0 +1,60 @@
+/* Color Strip
+https://erich-friedman.github.io/puzzle/strip/ */
+import util, sat.  
+main(Nr) =>                                                      %  123
+    input(Nr, C, NZ, NS), M = new_array(NZ,NS), M :: 1..3, Color = "RGB",
+    % Select H_orizontal and V_ertical strips in C:
+    StripsH = [[_,_,1,NS] : _ in 1..NZ], 
+    StripsV = [[_,_,1,NZ] : _ in 1..NS], 
+    Strips = StripsH ++ StripsV, diffn(Strips), % the strips don´t overlap!
+    [Z : [Z,_,_,_] in Strips] :: 1..len(C), 
+    [S : [_,S,_,_] in Strips] :: 1..len(C[1]),
+    % Copy the colors from the C-strips into M:
+    foreach({I, [Z,S,_,_]} in zip(1..NZ, StripsH), J in 1..NS) % I.te Zeile, J.te Spalte
+        S1 #= S + J - 1, matrix_element(C, Z, S1, M[I,J])
+    end,
+    foreach({J, [Z,S,_,_]} in zip(1..NS, StripsV), I in 1..NZ) % J.te Spalte, I.te Zeile
+        S1 #= S + I - 1, matrix_element(C, Z, S1, M[I,J])
+    end,
+    solve(vars(M) ++ vars(Strips)), 
+    foreach(Z in 1..NZ, S in 1..NS) printf("%c|", Color[M[Z,S]]), if S = NS then nl end end. /* 
+ */
+input(0, C, NZ, NS) =>
+    R=1, G=2, B=3,
+    C = {{B,G,G,B,B,B,B,G},	
+   		 {R,G,R,G,G,R,B,R}}, 
+    NZ = 2, NS = 4. /*
+G|B|B|B|
+R|G|R|G|
+CPU time 0.03 seconds, korrekt */
+input(1, C, NZ, NS) =>
+    R=1, G=2, B=3,
+    C = {{R,R,B,R,R,B,B,R},	
+   		 {G,R,B,G,G,B,G,B}}, 
+    NZ = 2, NS = 4. /*
+G|R|B|G|
+B|R|R|B|
+CPU time 0.036 seconds, korrekt */
+input(6, C, NZ, NS) =>
+    R=1, G=2, B=3,
+    C = {{G,G,B,G,B,B,B,R,G},	
+   		 {R,R,G,R,R,G,R,R,B},
+         {B,R,G,G,G,B,B,G,B},
+         {B,R,G,B,B,B,B,R,G}}, 
+    NZ = 3, NS = 6. /*
+B|B|B|B|R|G|
+R|R|G|R|R|G|
+G|G|B|G|B|B|
+CPU time 0.073 seconds, korrekt */
+input(19, C, NZ, NS) =>
+    R=1, G=2, B=3,
+    C = {{B,R,R,G,R,B,G,B,R,G,G,G,R,B,R,B},	
+   		 {B,B,R,G,G,R,R,R,B,B,G,B,B,R,B,G},
+   		 {R,G,R,B,G,B,B,B,G,B,R,B,R,R,G,R},
+   		 {B,R,R,R,G,R,R,G,G,G,B,B,R,R,G,B}}, 
+    NZ = 4, NS = 8. /*
+R|G|G|G|R|B|R|B|
+B|B|R|G|G|R|R|R|
+G|B|R|B|R|R|G|R|
+B|B|G|B|B|R|B|G|
+CPU time 0.714 seconds, korrekt */

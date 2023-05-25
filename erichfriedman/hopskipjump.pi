@@ -1,0 +1,57 @@
+/* Janko Erich Friedman Hop, Skip and Jump - using hcp(Vs,Es)
+https://erich-friedman.github.io/puzzle/hop/ */
+import util, sat. 
+main ?=>	
+    A = {{0,0,0,0,0,0,3}, % 1 = Dot
+         {0,0,0,0,0,0,0},
+         {0,0,0,0,1,0,0},
+         {0,0,0,0,0,0,0},
+         {0,1,0,0,0,0,0},
+         {0,0,0,0,0,0,0},
+         {2,0,0,0,0,0,0}}, N = len(A), Start = (N,1), Finish = (1,N),
+    Vs = [{(Z,S), _} : Z in 1..N, S in 1..N], % possible vertices
+    VMap = new_map(), foreach ({(Z,S),B} in Vs) VMap.put({Z,S}, B) end,
+    Typ = new_array(N,N), Typ :: 0..3, % 1=Hop, 2=Skip, Jump=3
+    Typ[N,1] #= 1,
+    foreach(Z in 1..N, S in 1..N) 
+        Typ[Z,S] #= 0 #<=> VMap.get({Z,S}) #= 0,
+        if A[Z,S] > 0 then Typ[Z,S] #> 0 end % part of the path
+    end,
+    Es = [{Finish, Start, 1}] % F -> S schließt den Loop
+         ++ [{(Z,S), (Z1,S1), _} : {(Z,S),_} in Vs, {(Z1,S1),_} in Vs, (Z1,S1) != (Z,S),
+                                   ((Z1 = Z, abs(S1 - S) =< 3); (S1 = S, abs(Z1 - Z) =< 3))], % mögliche Kanten
+    EMap = new_map(), foreach ({(Z1,S1),(Z2,S2),B} in Es) EMap.put({Z1,S1,Z2,S2}, B) end,
+    hcp(Vs, Es), % die gerichteten Kanten in Es formen einen Hamilton-Cycle auf Vs
+	% The path must alternately hop (move 1 square), skip (move 2 squares), and jump (move 3 squares):
+    foreach({(Z1,S1), (Z2,S2), B} in Es, (Z1,S1)!=Finish) % take out the edge from F to S!
+        B #= 1 #=> (Typ[Z1,S1] #= abs(Z2 - Z1) + abs(S2 - S1) #/\ Typ[Z2,S2] #= (Typ[Z1,S1] mod 3) + 1)
+	end,  % v- horizontal -------v        v- vertikal ---------v 
+    foreach({(Z2,S1), (Z2,S3), Bh} in Es, {(Z1,S2), (Z3,S2), Bv} in Es, % mögliche Kreuzung
+            ((Z1 < Z2, Z2 < Z3); (Z3 < Z2, Z2 < Z1)), ((S1 < S2, S2 < S3); (S3 < S2, S2 < S1)) )
+        Bh + Bv #< 2 % der Pfad kreuzt sich nicht!
+    end,
+    foreach({(Z1,S1), (Z2,S2), B} in Es) % die Felder zwischen zwei Endpunkten sind leer!
+        if Z1 = Z2 then foreach(S in min(S1,S2)+1..max(S1,S2)-1) B #= 1 #=> VMap.get({Z1,S}) #= 0 end end, 
+        if S1 = S2 then foreach(Z in min(Z1,Z2)+1..max(Z1,Z2)-1) B #= 1 #=> VMap.get({Z,S1}) #= 0 end end
+    end, 
+    solve(vars(Typ) ++ values(VMap) ++ values(EMap)),
+    M = {{0 : _ in 1..N} : _ in 1..N}, I = 1, M[N,1] := 1, Z3 = N, S3 = 1,
+    while(Z3 != 1; S3 != N) % nummeriere die Punkte von Start=1 aufwärts durch
+        Idx = find_first_of(Es, {(Z3,S3), _, 1}), {_, (Z4,S4), _} = Es[Idx],
+        if Z3 = Z4 then foreach(S in min(S3,S4)+1..max(S3,S4)-1) M[Z3,S] := -1 end end, % -
+        if S3 = S4 then foreach(Z in min(Z3,Z4)+1..max(Z3,Z4)-1) M[Z,S3] := -2 end end, % |
+        Z3 := Z4, S3 := S4, I := I + 1, M[Z3,S3] := I
+    end,
+    foreach(Z in 1..N, S in 1..N) printf("%2s ", symb(M[Z,S])), if S = N then nl end end. /* 
+                  13 
+                   | 
+    9  -  - 10     | 
+    |       11  - 12 
+    8                
+    7  -  -  6  -  5 
+ 1  2  -  3  -  -  4 
+CPU time 0.431 seconds, korrekt */
+symb(X) = cond(X > 0, to_string(X), cond(X = -1, "-", cond(X = -2, "|", "") ) ).
+/*  if     X > 0  then C = to_string(X) elseif X = 0 then C = ""
+    elseif X = -1 then C = "-" elseif X = -2 then C = "|"
+    end.*/

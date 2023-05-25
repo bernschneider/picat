@@ -1,0 +1,63 @@
+/* Janko Erich Friedman Hexa Trex
+https://erich-friedman.github.io/puzzle/hexeq/ */
+import util. %, cp.
+
+main(No) =>
+    input(No, Symbol, Hexagon), 
+    N = len(Symbol), P = new_list(N),
+    foreach(I in 1..N-1) table_in({P[I], P[I+1]}, Hexagon) end, % alle Schritte sind erlaubt
+    permutation(1..N, P), % alle Zellen werden betreten
+    Equation = [Symbol[I] : I in P],
+    [LHS, RHS] = Equation.split("="),
+    catch(parse_term(LHS) =:= parse_term(RHS), _Exception, fail), % catch avoids syntax error!
+    solve(P), 
+    println(Equation).
+
+input(0, Symbol, Hexagon) =>
+    Symbol = "2824/=1", % zeilenweise gelesen
+    M = {{1,2,x}, {3,4,5}, {6,7,x}},
+    Hexagon = hex(M, 0).  % 28/14=2, CPU time 0.0 seconds, korrekt
+input(1, Symbol, Hexagon) =>
+    Symbol = "76-4=68", 
+    M = {{1,2,x}, {3,4,5}, {6,7,x}},
+    Hexagon = hex(M, 0).  % 74-68=6, CPU time 0.002 seconds, korrekt
+input(6, Symbol, Hexagon) =>
+    Symbol = "12=2/85-6*", 
+    M = {{1,2,3,x}, {4,5,6,7}, {8,9,10,x}},
+    Hexagon = hex(M, 0).  % 28=5*6-2/1 CPU time 0.008 second, korrekt
+input(18, Symbol, Hexagon) =>
+    Symbol = "4=568+951656+-", 
+    M = {{x,1,2,3}, {4,5,6,7}, {8,9,10,11},{12,13,14,x}}, 
+    Hexagon = hex(M, 1).  % 516+6-59+5=468 CPU time 0.579 seconds, korrekt
+input(19, Symbol, Hexagon) =>
+    Symbol = "=7397*9-64+2/8", 
+    M = {{x,1,2,3}, {4,5,6,7}, {8,9,10,11},{12,13,14,x}}, 
+    Hexagon = hex(M, 1).  % 39+8/4*7=79-26 CPU time 0.254 seconds, korrekt
+input(20, Symbol, Hexagon) =>
+    Symbol = "=5331/7-93297-", 
+    M = {{x,1,2,3}, {4,5,6,7}, {8,9,10,11},{12,13,14,x}}, 
+    Hexagon = hex(M, 1).  % 5=193-97-273/3 CPU time 0.095 seconds, korrekt
+input(188, Symbol, Hexagon) => % https://www.nucleuslearning.com/category/hexa-trex-puzzles/
+    Symbol = "3=1*25-57", % im Zigzag gelesen:\/\/  = 3=1, \/\/ = *25-5, \/\/  = 7
+    M = {{x,1,2,3,x}, {4,5,6,7,8}, {x,x,9,x,x}}, 
+    Hexagon = hex1(M, 1).  % 2*3=57-51 CPU time 0.006 seconds, sieht gut aus!
+input(197, Symbol, Hexagon) => % https://www.nucleuslearning.com/category/hexa-trex-puzzles/
+    Symbol = "15-=4882/06+", % im Zigzag gelesen: \/\/ = 15, \/\/ = -=4, \/\/ = 882/, \/\/ = 06+
+    M = {{x,1,x,2,x}, {x,3,4,5,x}, {6,7,x,8,9}, {x,10,11,12,x}}, 
+    Hexagon = hex1(M, 1).  % 88-1=54/2+60 CPU time 0.001 seconds, korrekt
+
+%      v- X = 0 <=> 1.Zeile eingerückt, X = 1 <=> 2. Zeile eingerückt  /\
+hex(M, X) = Res =>           % erlaubte Schritte im stehenden Hexagon |  | 
+    NZ = len(M), NS = len(M[1]),                                   %   \/
+    Res = [{M[Z,S],M[Z1,S1]} : Z in 1..NZ, S in 1..NS, M[Z,S] != x, 
+                               Diag = cond(Z mod 2 = X, [(Z-1,S-1), (Z+1,S-1)], [(Z-1,S+1), (Z+1,S+1)]),
+                               (Z1,S1) in [(Z-1,S),(Z,S-1),(Z,S+1),(Z+1,S)] ++ Diag,   
+                               0<Z1, Z1=<NZ, 0<S1, S1=<NS, M[Z1,S1] != x].
+
+%       v- X = 0 <=> /\/\, X = 1 <=> \/\/:                              __
+hex1(M, X) = Res =>          % erlaubte Schritte im liegenden Hexagon  /  \ 
+    NZ = len(M), NS = len(M[1]),                                     % \  /
+    Res = [{M[Z,S],M[Z1,S1]} : Z in 1..NZ, S in 1..NS, M[Z,S] != x,  %  --
+                               Diag = cond(S mod 2 = X, [(Z-1,S-1), (Z-1,S+1)], [(Z+1,S-1), (Z+1,S+1)]),
+                               (Z1,S1) in [(Z-1,S),(Z,S-1),(Z,S+1),(Z+1,S)] ++ Diag,   
+                               0<Z1, Z1=<NZ, 0<S1, S1=<NS, M[Z1,S1] != x].

@@ -1,0 +1,55 @@
+/* Janko Erich Friedman Corner Mazes - using hcp(Vs,Es)
+https://erich-friedman.github.io/puzzle/corner/ */
+import sat. 
+main(P) =>
+    input(P, C), N = len(C), Src = (N,1), Dest = (1,N), 
+    Vs = [{(Z,S), _} : Z in 1..N, S in 1..N], % mögliche Vertices
+    VMap = new_map(), foreach ({(Z,S),B} in Vs) VMap.put({Z,S}, B) end, 
+    Es = [{Dest, Src, 1}] ++ [{(Z,S), (Z1,S1), _} : Z in 1..N, S in 1..N, Z1 in 1..N, S1 in 1..N, abs(Z1 - Z) + abs(S1 - S) = 1 ], % mögliche Kanten
+    hcp(Vs, Es), % die gerichteten Kanten in Es formen einen Hamilton-Cycle auf Vs
+    EMap = new_map(), foreach ({(Z1,S1),(Z2,S2),B} in Es) EMap.put({Z1,S1,Z2,S2}, B) end,
+    Cr = new_array(N,N), Cr :: 0..1, % path corner
+    foreach(Z in 1..N, S in 1..N) 
+      if ((Z,S) = Src; (Z,S) = Dest) 
+      then Cr[Z,S] #= 0
+      else % check if path goes straight through Z|S horizontally (H) or vertically (V):
+        H #= EMap.get({Z,S-1,Z,S}, 0) + EMap.get({Z,S,Z,S+1}, 0) + EMap.get({Z,S+1,Z,S}, 0) + EMap.get({Z,S,Z,S-1}, 0),
+        V #= EMap.get({Z-1,S,Z,S}, 0) + EMap.get({Z,S,Z+1,S}, 0) + EMap.get({Z+1,S,Z,S}, 0) + EMap.get({Z,S,Z-1,S}, 0),
+        B #= VMap.get({Z,S}),
+        B #= 0 #=>  Cr[Z,S] #= 0, % path not passing Z|S => no corner
+        B #= 1 #=> (Cr[Z,S] #= 0 #<=> (H #= 2 #\/ V #= 2)) 
+      end
+    end,
+    foreach(Z in 1..N, S in 1..N, C[Z,S] >= 0) %                 v-!-v
+        C[Z,S] #= sum([Cr[Z1,S1] : (Z1,S1) in [(Z-1,S), (Z,S-1), (Z,S), (Z,S+1), (Z+1,S)], 0<Z1, Z1=<N, 0<S1, S1=<N])
+    end,
+    solve(vars(Vs) ++ vars(Es) ++ values(VMap) ++ values(EMap) ++ vars(Cr)),
+    foreach(Z in 1..N, S in 1..N) 
+        Chr = cond((Z,S)=(1,N), 'F', ' '),
+        if     EMap.get({Z,S, Z-1,S}, 0) = 1 then Chr := '^' elseif EMap.get({Z,S, Z+1,S}, 0) = 1 then Chr := 'v'
+        elseif EMap.get({Z,S, Z,S-1}, 0) = 1 then Chr := '<' elseif EMap.get({Z,S, Z,S+1}, 0) = 1 then Chr := '>' 
+        end,
+        printf("%c|", Chr), if S = N then nl end
+    end. 
+
+input(0, C) =>
+    O = -1,
+    C = {{2,2,1,O}, 
+         {O,3,O,O},
+         {O,O,O,O},
+         {O,1,O,O}}. /*
+ |>|>|F|
+>|^| | |
+^|<|<| |
+>|>|^| |, korrekt */
+input(25, C) =>
+    O = -1,
+    C = {{O,2,2,O,O}, 
+         {O,O,O,O,1},
+         {O,O,O,O,O},
+         {O,O,4,O,O},
+         {O,O,4,O,1}}. /*
+ |>|>|F|
+>|^| | |
+^|<|<| |
+>|>|^| |, korrekt */

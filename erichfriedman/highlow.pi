@@ -1,0 +1,29 @@
+/* Janko Erich Friedman High/Low Puzzle
+https://erich-friedman.github.io/puzzle/highlow/ */
+import cp. 
+
+main(Letter) =>
+    input(Letter,Gs), N = len(Gs[1]) - 2, % Gs[I] = N digits of I-th guess, no. of v- and *-clues
+    No = new_array(N), No :: 1..9, % Find the number
+    foreach(G in Gs) 
+        sum([(No[I] #< G[I]) : I in 1..N]) #= G[N+1], % v = no. of digits, which need to be lower
+        sum([(No[I] #= G[I]) : I in 1..N]) #= G[N+2]  % * = no. of digits, which are exactly correct
+    end,
+    solve(No),
+    println(No). 
+
+% v = no. of greeen down arrows, * = no. of blue stars:
+input(0, Gs) => % v * 
+    Gs = {{1,8,9, 1,0},
+          {3,1,6, 1,1},
+          {8,7,6, 1,1}}.  % {2,9,6} CPU time 0.001 seconds, correct
+input(a, Gs) => % v *
+    Gs = {{3,6,9, 1,1},
+          {4,9,1, 1,0},
+          {6,7,2, 2,1}}.  % {5,6,2} CPU time 0.0 seconds, correct
+input(p, Gs) =>     % v *
+    Gs = {{8,3,9,6,3, 3,0},
+          {4,4,4,8,9, 1,1},
+          {8,5,1,7,4, 2,0},
+          {5,8,5,3,1, 2,1},
+          {5,6,6,3,4, 3,1}}.  % {4,6,5,9,2} CPU time 0.001 seconds, correct

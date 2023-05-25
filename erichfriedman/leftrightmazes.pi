@@ -1,0 +1,56 @@
+/* Janko Erich Friedman Left Right Mazes - using hcp(Vs,Es)
+https://erich-friedman.github.io/puzzle/leftright/
+Find a path that moves horizontally and vertically from the bottom left to the top right. The path may cross itself */
+import sat. 
+main ?=>
+    R=1, L=2, % in der Definition von A bedeuten R=Right/Red, L=Left/Light blue, 3=Start, 4=Finish
+    A = {{0,0,L,0,R,0,4},
+         {R,L,R,0,R,L,R}, 
+         {0,0,0,R,R,L,0}, 
+         {L,R,0,R,0,R,0}, 
+         {0,L,0,0,0,R,0}, 
+         {0,R,R,0,0,L,L},
+         {3,R,0,0,0,0,0}}, N = len(A), Start = (N,1), Finish = (1,N), 
+    Vs = [{(Z,S), _} : Z in 1..N, S in 1..N], % mögliche Vertices
+    Es = [{Finish, Start, 1}] 
+        ++ [{(Z,S), (Z1,S1), _} : Z in 1..N, S in 1..N, Z1 in 1..N, S1 in 1..N, abs(Z1 - Z) + abs(S1 - S) = 1] % 1er-Schritte
+        ++ [{(Z,S), (Z,S1), _} : Z in 2..N-1, S in 1..N, S1 in 1..N, abs(S1 - S) = 2 ], % Kanten zum Überspringen einer vertikalen Kante
+    VMap = new_map(), foreach({(Z1,S1), B} in Vs) VMap.put({Z1,S1}, B) end,
+    EMap = new_map(), foreach({(Z1,S1),(Z2,S2),B} in Es) EMap.put({Z1,S1,Z2,S2}, B) end,
+    foreach({(Z,S), (Z,S2), B} in Es, abs(S2 - S) = 2) % 2er-Schitt zum Überspringen einer vertikalen Kante:
+        S1 = min(S, S2) + 1, % das übersrpungene Feld (Z,S1) ist weiß und enthält ^ oder v:
+        if A[Z,S1] > 0 then B #= 0 end,
+        B #= 1 #=> (EMap.get({Z,S1,Z-1,S1}) #= 1 #\/ EMap.get({Z,S1,Z+1,S1}) #= 1)
+    end,
+    foreach({(Z1,S1), (Z2,S2), B1} in Es, {(Z2,S2), (Z3,S3), B2} in Es) % two consecutive steps
+        % In the following we must turn arround the implications (edge => dir) <=> (~dir => ~edge), otherwise we get an error message:
+        % You must not turn at white squares:
+        if A[Z2,S2] = 0 then % v- 1->2 und 2->3 gehen in die gleiche Richtung
+              if not((Z1 = Z3, sign(S2-S1) = sign(S3-S2)); S1 = S3) then #~(B1 + B2 #= 2) end end, 
+        % You may turn Right at Red squares:
+        if A[Z2,S2] = R then 
+              if not(Z1 = Z3; S1 = S3; (Z3 - Z2 = sign(S2 - S1), sign(S3 - S2) = Z1 - Z2)) then #~(B1 + B2 #= 2) end end, 
+        % You may turn Left at Light blue squares:
+        if A[Z2,S2] = L then 
+              if not(Z1 = Z3; S1 = S3; (Z3 - Z2 = sign(S1 - S2), sign(S3 - S2) = Z2 - Z1)) then #~(B1 + B2 #= 2) end end
+    end,
+    hcp(Vs, Es), % die gerichteten Kanten in Es formen einen Hamilton-Cycle auf Vs
+    solve(vars(Vs) ++ vars(Es) ++ values(VMap) ++ values(EMap)), 
+    Chr =" RLSF",
+    foreach(Z in 1..N, S in 1..N) 
+        C = ' ', 
+        if     EMap.get({Z,S, Z-1,S}, 0) = 1 then C := '^' 
+        elseif EMap.get({Z,S, Z+1,S}, 0) = 1 then C := 'v'      % v--------v beim Überspringen einer vertikalen Kante
+        elseif (EMap.get({Z,S, Z,S-1}, 0) = 1; EMap.get({Z,S, Z,S-2}, 0) = 1) then C := '<' 
+        elseif (EMap.get({Z,S, Z,S+1}, 0) = 1; EMap.get({Z,S, Z,S+2}, 0) = 1) then C := '>' 
+        end,
+        printf("%c%c|", C, Chr[1+A[Z,S]]), if S = N then nl end
+    end, nl, fail.  /* 
+  |  | L|  | R|  | F|
+>R|>L|vR|  | R| L|^R|
+^ |  |v | R| R| L|^ |
+^L|>R|v |>R|> |vR|^ |
+^ |^L|v |  |  |vR|^ |
+^ |^R|<R|  |  |>L|^L|
+^S| R|  |  |  |  |  |
+CPU time 0.069 seconds, no more solutions, korrekt */

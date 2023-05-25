@@ -1,0 +1,94 @@
+/* Janko Erich Friedman Hex Loop
+https://erich-friedman.github.io/puzzle/hexloop/ */
+import util, sat.
+
+main(No) =>
+    input(No, Cs), NZ = len(Cs), NS = len(Cs[1]), O = 7, 
+    % The path does not go through any numbered hexagons:
+    Vs = [{(Z,S),_} : Z in 1..NZ, S in 1..NS, Cs[Z,S] = O],   
+    VMap = new_map(), foreach ({(Z,S),B} in Vs) VMap.put({Z,S}, B) end,
+    Es = [{(Z,S),(Z1,S1),_} : {(Z,S),B} in Vs, (Z1,S1) in nb(Cs,Z,S)],
+    % No sharp turns are ever made:
+    foreach({(Zv,Sv),(Z,S),Bv} in Es, {(Z,S),(Zn,Sn),Bn} in Es, membchk((Zn,Sn), nb(Cs,Zv,Sv)))
+        Bv + Bn #< 2
+    end,
+    hcp(Vs,Es),
+    % The numbers in the grid indicate how many of the adjacent hexagons contain part of the path:
+    foreach(Z in 1..NZ, S in 1..NS, 0 =< Cs[Z,S], Cs[Z,S] < O)
+        Cs[Z,S] #= sum([VMap.get({Z1,S1}) : (Z1,S1) in nb(Cs,Z,S)])
+    end,
+    solve(vars(Vs) ++ vars(Es)), 
+    EMap = new_map(), foreach({(Zv,Sv),(Z,S),1} in Es) 
+        EMap.put({Zv,Sv,Z,S}, 1), EMap.put({Z,S,Zv,Sv}, 1) 
+    end,
+    % println(sort(EMap.keys())),
+    foreach(Z in 1..NZ)
+        if Z mod 2 = 0 then print("  ") end, % jede zweite Zeile einrücken!
+        foreach(S in 1..NS) % horizontale Pfadstücke und Vorgabezahlen:
+            if Cs[Z,S]<0 then print("    ") 
+            else printf(" %c %c", cond(Cs[Z,S]=7, ' ', chr(48+Cs[Z,S])),
+                                  cond(EMap.has_key({Z,S,Z,S+1}), '-', ' '))
+            end
+        end, nl,
+        Odd = cond(Z mod 2 = 1, 1, 0), Even = 1 - Odd,
+        if Z mod 2 = 0 then print("  ") end, % jede zweite Zeile einrücken!
+        foreach(S in 1..NS) % Diagonale Pfadstücke:
+            printf("%c %c ", cond(EMap.has_key({Z,S,Z+1,S-Odd}),  '/',  ' '),
+                             cond(EMap.has_key({Z,S,Z+1,S+Even}), '\\', ' '))
+        end, nl
+    end.                  
+
+input(0, Cs) =>
+    X = -1, O = 7, % X = not part of the hexagon, O = no number provided
+    Cs = {{X,X,O,O,O,O,X},
+           {X,O,O,2,O,O,X}, 
+          {X,O,6,O,O,O,O}, 
+           {O,O,O,4,O,0,O}, 
+          {X,3,O,O,O,O,O}, 
+           {X,O,5,O,O,1,X}, 
+          {X,X,O,O,O,O,X}}. /*
+         -     2              
+      /     \                 
+         6                  
+      \     /               
+               4       0      
+        \   \                 
+     3         -            
+        /         \         
+           5           1      
+        \         /           
+           -   -            correct */
+
+input(1, Cs) =>
+    X = -1, O = 7, % X = not part of the hexagon, O = no number provided
+    Cs = {{X,X,O,O,4,O,O,X,X},   
+           {X,O,O,O,O,O,O,X,X},           
+          {X,O,O,O,O,O,O,O,X},           
+           {O,5,O,O,O,O,1,O,X}, 
+          {O,O,O,O,2,1,O,O,O}, 
+           {O,O,O,O,O,O,1,O,X}, 
+          {X,O,O,O,O,O,O,O,X}, 
+           {X,3,O,3,O,O,O,X,X},           
+          {X,X,O,O,O,O,O,X,X}}. /*
+           -     4     -            
+        /     \     /     \         
+                 -                    
+      /                   /           
+               -   -   -            
+    /       /                       
+       5                   1          
+    \     /                           
+                 2   1              
+    /     \                         
+             -   -         1          
+    \               \                 
+       -               -            
+          \               \         
+       3       3                      
+            \             /           
+               -   -   -            CPU time 0.037 seconds, korrekt */
+
+% Nachbarn im stehenden Hexagon:
+nb(Cs,Z,S) = [(Z1,S1) : VZ = cond(Z mod 2 = 0, 1, -1),
+                        (Z1,S1) in [(Z,S-1),(Z,S+1),(Z-1,S),(Z+1,S),(Z-1,S+VZ),(Z+1,S+VZ)], 
+                        0<Z1, Z1=<len(Cs), 0<S1, S1=<len(Cs[1]), Cs[Z1,S1] = 7].

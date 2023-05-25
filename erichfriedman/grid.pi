@@ -1,0 +1,44 @@
+/* Janko Erich Friedman Grid
+https://erich-friedman.github.io/puzzle/grid/ */
+import util, sat.
+
+main(P) =>
+    input(P, C), N = len(C),
+    Vs = [{(Z,S), 1} : Z in 1..N, S in 1..N], Es = [],
+    foreach(Z in 1..N, S in 1..N)
+        D = C[Z,S],
+        if number(D) then Edges = [{(Z,S),(Z1,S1),_} : (Z1,S1) in [(Z-D,S),(Z+D,S),(Z,S-D),(Z,S+D)], 0<Z1, Z1=<N, 0<S1, S1=<N]
+        elseif D = > then Edges = [{(Z,S),(Z,S1),_} : S1 in S+1..N]
+        elseif D = < then Edges = [{(Z,S),(Z,S1),_} : S1 in 1..S-1]
+        elseif D = v then Edges = [{(Z,S),(Z1,S),_} : Z1 in Z+1..N]
+        elseif D = ^ then Edges = [{(Z,S),(Z1,S),_} : Z1 in 1..Z-1]
+        end,
+        Es := Es ++ Edges
+    end,
+    hcp(Vs, Es), % die gerichteten Kanten in Es formen einen Hamilton-Cycle auf Vs
+    solve(vars(Vs) ++ vars(Es)), 
+    M = {{_ : _ in 1..N} : _ in 1..N}, 
+    foreach({(Z1,S1),(Z2,S2),1} in Es) DZ = Z2 - Z1, DS = S2 - S1, M[Z1,S1] := [DZ,DS] end,
+    Pf = ["< >", "^ v"],
+    foreach(Z in 1..N, S in 1..N)
+        [DZ,DS] = M[Z,S], D = DZ + DS, % DZ = 0 oder DS = 0 weil nur othogonale Bewegung erlaubt 
+        printf("%d%c|", abs(D), Pf[cond(DZ = 0, 1, 2), sign(D) + 2]), 
+        if S = N then nl end
+    end.
+
+input(0, C) =>
+    C = {{2,1,v},
+         {v,^,<},
+         {2,1,<}}. /*
+2>|1<|1v|
+1v|1^|2<|
+2>|1^|1<|, korrekt */
+input(4, C) =>
+    C = {{>,2,2,2},
+         {1,1,2,2},
+         {1,v,1,2},
+         {1,1,1,^}}. /*
+2>|2>|2v|2v|
+1^|1^|2v|2<|
+1^|1v|1^|2<|
+1^|1<|1>|2^|, korrekt */

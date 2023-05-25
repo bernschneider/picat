@@ -1,0 +1,35 @@
+/* Janko Erich Friedmann Close Or Far
+https://erich-friedman.github.io/puzzle/closefar/ */
+import util, smt. % sat produces a wrong solution
+
+good(L) =>
+    N = len(L), Pos = [C1, C2, F1, F2], Pos :: 1..N, all_different(Pos),
+    count(1, L, 2), element(C1, L, 1), element(C2, L, 1), 
+    count(2, L, 2), element(F1, L, 2), element(F2, L, 2),
+    abs(C1 - C2) #< abs(F1 - F2).
+
+main(Nr) => 
+    input(Nr, M),  M :: 0..2, Chr = " CF",
+    foreach(L in M.rows() ++ M.columns()) good(L) end,
+    solve(M),
+    foreach(Row in M) 
+      foreach(X in Row) printf("%c|", Chr[1+X]) end, nl
+    end. 
+
+input(0, M) =>
+    C=1, F=2,
+    M = {{_,_,_,F,_,_,_},
+         {_,_,_,_,_,_,F},
+         {_,_,_,_,_,C,_},
+         {_,_,C,_,_,_,_},
+         {_,C,_,_,_,_,_},
+         {F,_,_,_,_,_,_},
+         {_,_,_,_,C,_,_}}. /*
+F| | |F| |C|C|
+C|F|C| | | |F|
+ | |F| |F|C|C|
+ |C|C|F| |F| |
+C|C| | |F| |F|
+F| |F|C|C| | |
+ |F| |C|C|F| |
+CPU time 0.112 seconds, korrekt*/

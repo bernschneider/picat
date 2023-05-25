@@ -1,0 +1,71 @@
+/* Erich Friedman Chess Pack
+https://erich-friedman.github.io/puzzle/chesspack/ */
+import sat.
+rev(X, Y) => ((X = 0, Y = 0); (X > 0, Y < 0); (X < 0, Y > 0)).
+
+main(No) =>
+    input(No, M), NZ = len(M), NS = len(M[1]), 
+    % Put a chess king, queen, rook, bishop, or knight in each vacant square ..
+    M :: 1..5, Mvars = vars(M), 
+    if No = p0 then M[4,1] #= 1 end, % <<<< constrain moved here from input(p0,M)
+    Vss = [[{(Z,S), _} : Z in 1..NZ, S in 1..NS] : _ in 1..5],
+    Vmaps = [new_map() : _ in 1..5], 
+    foreach (F in 1..5, {(Z,S),B} in Vss[F]) Vmaps[F].put({Z,S}, B) end,
+    foreach(Z in 1..NZ, S in 1..NS, F in 1..5) Vmaps[F].get({Z,S}) #<=> M[Z,S] #= F end,
+    Ess = new_list(5),
+    % King:
+    Ess[1] = [{(Z,S), (Z1,S1), _} : Z in 1..NZ, S in 1..NS, Z1 in 1..NZ, S1 in 1..NS, % Edges 
+                                    (Z1,S1) != (Z,S), abs(Z1 - Z) =< 1, abs(S1 - S) =< 1],
+    % Queen:
+    Ess[2] = [{(Z,S), (Z1,S1), _} : Z in 1..NZ, S in 1..NS, Z1 in 1..NZ, S1 in 1..NS, % Edges 
+                                    (Z1,S1) != (Z,S), (Z1 = Z; S1 = S; Z + S = Z1 + S1; Z - S = Z1 - S1)],
+    % Rook:
+    Ess[3] = [{(Z,S), (Z1,S1), _} : Z in 1..NZ, S in 1..NS, Z1 in 1..NZ, S1 in 1..NS, % Edges 
+                                    (Z1,S1) != (Z,S), (Z1 = Z; S1 = S)],
+    % Bishop:
+    Ess[4] = [{(Z,S), (Z1,S1), _} : Z in 1..NZ, S in 1..NS, Z1 in 1..NZ, S1 in 1..NS, % Edges 
+                                    (Z1,S1) != (Z,S), (Z + S = Z1 + S1; Z - S = Z1 - S1)],
+    % Knight:
+    Ess[5] = [{(Z,S), (Z1,S1), _} : Z in 1..NZ, S in 1..NS, DZ in 1..2, FZ in [-1,1], FS in [-1,1], 
+                                    Z1 = Z+FZ*DZ, S1 = S+FS*(3-DZ), 0<Z1, Z1=<NZ, 0<S1, S1=<NS],
+    foreach(F in 1..5) 
+        at_least(3, Mvars, F), % .. so that all five types of pieces are present in each puzzle 
+        hcp(Vss[F], Ess[F]) % all squares of F can be visited by that piece in a cycle ..
+    end,
+    % .. without reversing its direction: 
+    foreach(F in 2..4, {(Zv,Sv),(Z,S),Bv} in Ess[F], {(Z,S),(Zn,Sn),Bn} in Ess[F],
+            rev(Z - Zv, Zn - Z), rev(S - Sv, Sn - S))
+        Bv + Bn #< 2
+    end,
+    solve(vars(Vss) ++ vars(Ess) ++ vars(M)),
+    Chr = "@*+XL", % king, queen, rook, bishop, knight
+    foreach(Z in 1..NZ, S in 1..NS) 
+        printf("%c|", Chr[M[Z,S]]), 
+        if S = NS then nl end
+    end.
+
+input(0, M) => % Ki=1, Qu=2, Ro=3, Bi=4, Kn=5
+    M = {{_,_,_,_,_},
+         {_,5,_,_,_},
+         {_,_,_,_,_},
+         {1,_,_,_,_}}. /* no solution */
+
+input(p0, M) => % Ki=1, Qu=2, Ro=3, Bi=4, Kn=5
+    M = {{_,_,_,_,_},
+         {_,5,_,_,_},
+         {_,_,_,_,_},
+         {_,_,_,_,_}}. /* king constrain (1) moved to code line 10
+*|X|*|L|*|
+X|L|X|+|+|
+@|X|*|+|L|
+@|@|L|+|+|  correct */
+
+input(1, M) => % Ki=1, Qu=2, Ro=3, Bi=4, Kn=5
+    M = {{_,_,_,_,_},
+         {_,_,_,_,_},
+         {5,4,_,_,_},
+         {_,_,_,_,_}}. /*
++|L|*|X|+|
+L|*|L|*|X|
+L|X|L|@|@|
++|L|X|@|+|  correct */

@@ -1,0 +1,46 @@
+/* Janko Erich Friedman Arrow
+https://erich-friedman.github.io/puzzle/arrow/*/
+import sat, util.
+
+main(No) =>
+    input(No, Cs), N = len(Cs),
+    M = new_array(N,N), M :: [0,1], % 1=schwarz 
+    foreach(Z in 1..N, S in 1..N)
+        Cnt = to_int(Cs[Z,S,1]), Pf = Cs[Z,S,2..3],
+        if      Pf="r_" then L = [M[Z,S1]  : S1 in S+1..N]
+        elseif  Pf="l_" then L = [M[Z,S1]  : S1 in 1..S-1]
+        elseif  Pf="u_" then L = [M[Z1,S]  : Z1 in Z+1..N]
+        elseif  Pf="o_" then L = [M[Z1,S]  : Z1 in 1..Z-1]
+        elseif  Pf="ru" then L = [M[Z1,S1] : Z1 in Z+1..N, S1 in S+1..N, Z1-S1=Z-S]
+        elseif  Pf="lo" then L = [M[Z1,S1] : Z1 in 1..Z-1, S1 in 1..S-1, Z1-S1=Z-S]
+        elseif  Pf="ro" then L = [M[Z1,S1] : Z1 in 1..Z-1, S1 in S+1..N, Z1+S1=Z+S]
+        elseif  Pf="lu" then L = [M[Z1,S1] : Z1 in Z+1..N, S1 in 1..S-1, Z1+S1=Z+S]
+        end,
+        % The number in each colored arrow should be equal to the number of colored arrows it points to. 
+        % The number in each non-colored arrow should not be equal to the number of colored arrows it points to:
+        M[Z,S] #<=> Cnt #= sum(L)
+    end,
+    solve(vars(M)), 
+    foreach(Z in 1..N, S in 1..N)
+        if M[Z,S] = 1 then printf("%s|", Cs[Z,S]) else print("   |") end,
+        if S=N then nl end
+    end.
+
+input(0, Cs) =>
+    Cs = {{"3u_","1u_","0lu","3l_"},
+          {"2ru","0ru","1l_","0u_"},
+          {"2o_","1o_","2o_","1o_"},
+          {"2r_","1ro","2lo","1lo"}}. /*
+3u_|1u_|   |   |
+2ru|   |1l_|   |
+2o_|1o_|   |   |
+2r_|   |2lo|1lo|    CPU time 0.001 seconds, correct */
+input(18, Cs) =>
+    Cs = {{"1u_","1u_","2lu","2l_"},
+          {"2u_","2ru","2l_","1lu"},
+          {"2ro","1ro","1l_","3l_"},
+          {"1r_","1r_","0l_","3lo"}}. /*
+1u_|1u_|2lu|   |
+   |2ru|   |1lu|
+2ro|   |1l_|   |
+   |   |0l_|3lo|    CPU time 0.001 seconds, correct */

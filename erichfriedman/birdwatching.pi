@@ -1,0 +1,96 @@
+/* Janko Erich Friedman Birdwatching
+https://erich-friedman.github.io/puzzle/birds/ */
+import sat, util. 
+% Printing utilities:
+line(Map, Z1,S1, Z2,S2) = 
+    cond(Map.get({Z1,S1,Z2,S2}, 0) + Map.get({Z2,S2,Z1,S1}, 0) > 0, 1, 0).
+
+vertex(Birds,Vs,Z,S) = Res =>
+    CGrid = " rgybp",
+    Res = cond(membchk({(Z,S),1}, Vs), ['*', CGrid[1+Birds[Z,S]]], "  ").
+
+main(P) =>	 
+    Grid = {{ 1, 1, 1, 1, 1, 1, 1, 1, 1},
+            { 1, 0, 1, 0, 1, 0, 1, 0, 1},
+            { 1, 1, 1, 1, 1, 1, 1, 1, 1},
+            { 0, 1, 0, 1, 0, 1, 0, 1, 0},
+            { 0, 1, 1, 1, 1, 1, 1, 1, 0},
+            { 0, 1, 0, 1, 0, 1, 0, 1, 0},
+            { 1, 1, 1, 1, 1, 1, 1, 1, 1},
+            { 1, 0, 1, 0, 1, 0, 1, 0, 1},
+            { 1, 1, 1, 1, 1, 1, 1, 1, 1}}, N = len(Grid),
+    input(P, Cnt, Birds), 
+    % A birdwatcher wants to take a walk through her garden:
+    Vs = [ {(Z,S),_} : Z in 1..N, S in 1..N, Grid[Z,S] = 1], % all free squares can be visited
+    Es = [ {(Z,S),(Zn,Sn),_} : {(Z,S),_} in Vs, {(Zn,Sn),_} in Vs, abs(Zn-Z) + abs(Sn-S) = 1],
+    % She likes to enter the garden in row 8 on the left and exit in row 2 on the right:
+    path_d(Vs, Es, (8,1), (2,N)),
+    % The birdwatcher likes to see the same number of every colored bird:
+    foreach(Color in 1..5) Cnt #= sum([B : {(Z,S),B} in Vs, Birds[Z,S] = Color]) end,
+    solve(vars(Vs) ++ vars(Es)),
+    EMap = new_map(), foreach({(Zv,Sv),(Z,S),B} in Es) EMap.put({Zv,Sv,Z,S}, B) end,
+    SHor = " -", SVer = " |",
+    foreach (Z in 1..N-1)
+        foreach(S in 1..N-1) printf("%s%c", vertex(Birds,Vs,Z,S), SHor[1 + line(EMap, Z,S, Z,S+1)] ) end, println(vertex(Birds,Vs,Z,N)),
+        foreach(S in 1..N)   printf("%c  ",                       SVer[1 + line(EMap, Z,S, Z+1,S)] ) end, nl
+    end,
+    foreach(S in 1..N-1)     printf("%s%c", vertex(Birds,Vs,N,S), SHor[1 + line(EMap, N,S, N,S+1)] ) end, println(vertex(Birds,Vs,N,N)). 
+
+    input(1, Cnt, Birds) =>
+        Re=1, Gr=2, Ye=3, Bl=4, Pu=5,
+        Cnt = 1, % number of birds of each color
+        Birds = {{ 0, 0,Gr, 0, 0,Re, 0, 0, 0},
+                 { 0, 0, 0, 0, 0, 0, 0, 0, 0},
+                 { 0, 0, 0, 0, 0,Bl,Bl, 0, 0},
+                 { 0, 0, 0, 0, 0,Gr, 0, 0, 0},
+                 { 0, 0, 0, 0, 0, 0, 0,Ye, 0},
+                 { 0, 0, 0, 0, 0,Pu, 0, 0, 0},
+                 { 0, 0, 0,Re,Gr,Ye, 0,Bl, 0},
+                 { 0, 0, 0, 0, 0, 0,Re, 0, 0},
+                 { 0,Ye, 0, 0,Pu, 0, 0,Pu, 0}}. /*
+                                  * -* -* 
+                  |     |  
+                  *     * 
+                  |        
+                  *b-*    
+                     |     
+                     *    
+                     |     
+         * -* -* -* -*y   
+         |                 
+         *                
+         |                 
+* -* -*  *r-*g            
+|     |     |              
+*     *     *             
+      |     |              
+      * -* -*p  correct */
+input(18, Cnt, Birds) =>
+        Re=1, Gr=2, Ye=3, Bl=4, Pu=5,
+        Cnt = 3, % number of birds of each color
+        Birds = {{ 0, 0,Re, 0,Pu,Gr, 0,Ye, 0},
+                 { 0, 0, 0, 0,Pu, 0,Gr, 0, 0},
+                 { 0, 0, 0, 0, 0,Bl, 0,Ye, 0},
+                 { 0, 0, 0,Gr, 0,Bl, 0,Gr, 0},
+                 { 0, 0, 0, 0,Re,Pu,Ye, 0, 0},
+                 { 0,Bl, 0, 0, 0, 0, 0, 0, 0},
+                 {Gr,Re,Re, 0, 0,Pu, 0,Bl, 0},
+                 { 0, 0, 0, 0, 0, 0,Bl, 0, 0},
+                 { 0, 0,Re, 0,Pu,Ye,Ye, 0, 0}}. /*
+* -* -*r                  
+|     |                    
+*     *                 * 
+|     |                 |  
+* -*  * -*           *y-* 
+   |     |           |     
+   *     *g          *g   
+   |     |           |     
+   *     * -*r-*p    *    
+   |           |     |     
+   *b          *     *    
+   |           |     |     
+*g-*r       * -*p * -*b   
+|           |     |        
+*           *     *b      
+            |     |        
+            *p-*y-*y    CPU time 0.064 seconds, correct */

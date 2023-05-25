@@ -1,0 +1,35 @@
+/* Janko Erich Friedman C-Note
+https://erich-friedman.github.io/puzzle/100// */
+import util, cp.
+
+main(P) =>
+    input(P, M1), N = len(M1), 
+    Before = new_array(N,N), Before :: 0..1, % add a digit before the digit in the grid (or after)?
+    Add = new_array(N,N), Add :: 0..9,       % digit to be added
+    M2 = new_array(N,N), M2 :: 1..99,        % result after adding digits
+    foreach(R in 1..N, C in 1..N)
+        Before[R,C] #= 1 #=> M2[R,C] #= 10 * Add[R,C] + M1[R,C],
+        Before[R,C] #= 0 #=> M2[R,C] #= 10 * M1[R,C] + Add[R,C]
+    end,
+    % each row and col has the sum 100:
+    foreach(L in M2.rows() ++ M2.columns()) sum(L) #= 100 end,
+    solve([vars(Before) ++ vars(Add) ++ vars(M2)]),
+    foreach(Z in 1..N, S in 1..N)
+        printf("%2d|", M2[Z,S]), 
+        if S = N then nl end
+    end.
+
+input(0,M1) => 
+    M1 = {{8,8,4},
+          {6,2,5},
+          {3,6,1}}. /* 
+ 8|48|44|
+69|26| 5|
+23|26|51| looks good! */
+input(1,M1) =>
+    M1 = {{8,7,8},
+          {3,1,2},
+          {2,7,2}}. /* 
+85| 7| 8|
+13|15|72|
+ 2|78|20 correct */

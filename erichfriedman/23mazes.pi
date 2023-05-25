@@ -1,0 +1,42 @@
+/* Janko Erich Friedman 2-3 Mazes - using hcp(Vs,Es)
+https://erich-friedman.github.io/puzzle/23maze/ */
+import sat. 
+main ?=>	
+    A = {{0,0,1,0,0,1,1,0,0,0,1,0}, % 1 = Black
+         {1,0,0,0,0,0,0,1,1,0,0,0}, 
+         {1,0,1,0,1,0,1,0,0,1,1,1}, 
+         {0,1,1,1,1,1,0,1,0,0,1,1}, 
+         {0,1,1,1,1,1,1,1,0,1,0,1}, 
+         {0,0,0,1,1,1,1,1,1,1,1,0}, 
+         {0,0,1,1,1,0,0,0,1,1,1,0}, 
+         {0,0,1,1,1,0,0,1,0,0,0,0}, 
+         {0,1,1,0,1,1,0,1,0,0,0,1}, 
+         {0,1,1,1,0,1,1,1,1,0,0,1}, 
+         {0,0,0,0,1,1,1,0,1,0,1,0}, 
+         {0,0,0,1,0,0,1,0,1,0,0,0}}, N = len(A), Start = (N,1), Finish = (1,N), 
+    No = new_array(N,N), No :: 0..N*N, No[N,1] #= 1, % numbering the vertices in the path starting from "Start" = 1
+    foreach(Z in 1..N, S in 1..N, A[Z,S] = 1) No[Z,S] #= 0 end,
+    Vs = [{(Z,S), _} : Z in 1..N, S in 1..N, A[Z,S] != 1], % possible vertices
+    foreach({(Z,S), B} in Vs) B #= 1 #<=> No[Z,S] #> 0 end, % breaking symmetry
+    Es = [{Finish, Start, 1}] ++ [{(Z,S), (Z1,S1), _} : {(Z,S),_} in Vs, {(Z1,S1),_} in Vs, 
+            ( (Z1 = Z, abs(S1 - S) = 3); (S1 = S, abs(Z1 - Z) = 3); (abs(Z1 - Z) = 2, abs(S1 - S) = 2) ) ], % mögliche Kanten
+    hcp(Vs, Es), % die gerichteten Kanten in Es formen einen Hamilton-Cycle auf Vs
+    foreach({(Z1,S1), (Z2,S2), B} in Es, (Z1,S1)!=Finish) B #= 1 #=> No[Z2,S2] #= No[Z1,S1] + 1 end, % numbering the vertices
+    solve(vars(No) ++ vars(Vs) ++ vars(Es)),
+    foreach(Z in 1..N, S in 1..N) 
+        if A[Z,S] = 1 then print(" *|") elseif No[Z,S] = 0 then print("  |") else printf("%2d|", No[Z,S]) end,
+        if S = N then nl end
+    end, nl, fail. /* 
+21|  | *|22|  | *| *|  |28|  | *|29|
+ *|  |  |  |  |  |  | *| *|  |26|  |
+ *|  | *|  | *|23| *|  |24| *| *| *|
+20| *| *| *| *| *|11| *|27|12| *| *|
+  | *| *| *| *| *| *| *| 9| *|25| *|
+  |  |  | *| *| *| *| *| *| *| *|13|
+19|  | *| *| *|  |10|  | *| *| *|  |
+  |  | *| *| *|  |15| *| 8|14|  | 7|
+ 2| *| *| 3| *| *| 4| *|  | 5|  | *|
+18| *| *| *|16| *| *| *| *|  |  | *|
+  |  |  |  | *| *| *|  | *|  | *| 6|
+ 1|  |17| *|  |  | *|  | *|  |  |  |
+CPU time 0.134 seconds, no more solutions, korrekt */

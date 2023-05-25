@@ -1,0 +1,45 @@
+/* Janko erich Friedman Battleship
+https://erich-friedman.github.io/puzzle/battle/ */
+import util, sat.
+
+main(No) =>
+    input(No, CntSr, CntWr), N = len(CntSr), 
+    M  = new_array(N,N), M :: 0..5, Mvars = vars(M),
+    global_cardinality(Mvars, $[1-3,2-3,3-3,4-3,5-3]),
+    foreach(B in 1..5) % B is connected:
+        Grid = new_array(N,N), Grid :: 0..1, scc_grid(Grid),
+        foreach(Z in 1..N, S in 1..N) Grid[Z,S] #= (M[Z,S] #= B) end
+    end,
+    % Battleships have the form of a pill:
+    foreach(Z in 1..N-1, S in 1..N-1) 
+        M[Z,S] #= 0   #\/ M[Z,S]   #!= M[Z+1,S+1],
+        M[Z,S+1] #= 0 #\/ M[Z,S+1] #!= M[Z+1,S]
+    end,
+    % The numbers at the sides of the square give the sum of the numbers on all the ships in that row or column:
+    foreach({Sum,L} in zip(CntWr,M.rows()) ++ zip(CntSr,M.columns())) 
+        Cum = new_array(N), Cum[1] #= L[1], Cum[N] #= Sum,
+        foreach(I in 2..N)
+            L[I] #!= L[I-1] #=> Cum[I] #= Cum[I-1] + L[I],
+            L[I] #=  L[I-1] #=> Cum[I] #= Cum[I-1]
+        end
+    end,
+    solve(M), 
+    foreach(Z in 1..N, S in 1..N)
+        if M[Z,S] = 0 then print(" |") else printf("%d|", M[Z,S]) end, 
+        if S = N then nl end
+    end.
+
+input(0, CntSr, CntWr) => 
+    CntSr = [_,5,9,_,7], CntWr = [_,_,8,9,10]. /*
+ | |2| | |
+ | |2| | |
+1|5|2| | |
+1|5|3|3|3|
+1|5|4|4|4|      CPU time 0.409 seconds, correct */
+input(1, CntSr, CntWr) => 
+    CntSr = [2,3,4,5,_], CntWr = [_,_,_,3,6]. /*
+ |3| | |5|
+ |3| |1|5|
+2|3| |1|5|
+2| | |1| |
+2| |4|4|4|      CPU time 0.231 seconds, correct */

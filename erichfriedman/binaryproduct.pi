@@ -1,0 +1,38 @@
+/* Janko Erich Friedman Binary Product
+https://erich-friedman.github.io/puzzle/product/ */
+import util, sat.
+main(No) =>
+    input(No, L), 
+    Num = new_list(5), Num :: 1..9999,
+    foreach({Cs,N} in zip(L, Num))
+        Ds = new_list(len(Cs)), 
+        Ds :: 0..9, Ds[1] #> 0,
+        foreach({C,D} in zip(Cs,Ds))
+            Odd = cond(C = 'x', 1, 0),
+            D mod 2 #= Odd
+        end,
+        to_num(Ds, N)
+    end,
+    Num[5] #= Num[1] * Num[2],
+    Num[3] #= Num[1] * (Num[2] mod 10),
+    Num[4] #= Num[1] * (Num[2] div 10),
+    solve(Num),
+    printf("   %d%n  *%d%n  %d%n+%d%n %d%n", Num[1], Num[2], Num[3], Num[4], Num[5]).
+
+input(1, L) =>
+    L = ["ox", "xo", "ooo", "xxx", "xoxo"]. /*
+   67
+  *54
+  268
++335
+ 3618 correct */
+input(2, L) =>
+    L = ["xx", "xx", "xox", "xxx", "ooxx"]. /*
+   75
+  *57
+  525
++375
+ 4275 correct */
+to_num(Lst, Num) => 
+        Len = length(Lst),
+        Num #= sum([Lst[I]*10**(Len-I) : I in 1..Len]).

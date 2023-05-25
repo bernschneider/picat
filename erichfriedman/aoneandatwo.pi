@@ -1,0 +1,46 @@
+/* Janko Erich Friedman A One And A Two
+https://erich-friedman.github.io/puzzle/1and2/ */
+import util, cp.
+
+main(P) =>
+    input(P, C), N = len(C), 
+    M = new_array(N,N), M :: 1..2,
+    foreach(Z in 1..N, S in 1..N)
+        Pf = C[Z,S], L = "",
+        if     Pf = l  then L := [M[Z,S1] : S1 in 1..S-1] 
+        elseif Pf = r  then L := [M[Z,S1] : S1 in S+1..N] 
+        elseif Pf = o  then L := [M[Z1,S] : Z1 in 1..Z-1] 
+        elseif Pf = u  then L := [M[Z1,S] : Z1 in Z+1..N]
+        elseif Pf = lo then L := [M[Z-D,S-D] : D in 1..min(Z-1,S-1)]
+        elseif Pf = ro then L := [M[Z-D,S+D] : D in 1..min(Z-1,N-S)] 
+        elseif Pf = lu then L := [M[Z+D,S-D] : D in 1..min(N-Z,S-1)] 
+        elseif Pf = ru then L := [M[Z+D,S+D] : D in 1..min(N-Z,N-S)] 
+        end, % printf("%d|%d: %d%n", Z, S, len(L)),
+        count(1, L, Cnt1), count(2, L, Cnt2),
+        M[Z,S] #= 1 #=> Cnt2 #= 1,
+        M[Z,S] #= 2 #=> Cnt1 #= 2
+    end,
+    solve(M), 
+    foreach(Z in 1..N, S in 1..N)
+        printf("%2w%d|", C[Z,S], M[Z,S]), 
+        if S = N then nl end
+    end.
+
+input(1, C) =>
+    C = {{ u,ru, l, l},
+         { u,ru, u, l},
+         { r, r, o,lo},
+         {ro, o, l, o}}. /*
+ u1|ru2| l1| l2|
+ u2|ru1| u1| l1|
+ r1| r1| o2|lo1|
+ro1| o2| l1| o1|, korrekt */
+input(2, C) =>
+    C = {{ r, u, u, l},
+         { r, r, u,lu},
+         {ro, o, o,lo},
+         { r, o,lo, l}}. /*
+ r2| u1| u1| l2|
+ r2| r2| u1|lu1|
+ro1| o1| o2|lo2|
+ r2| o1|lo1| l2|, korrekt */

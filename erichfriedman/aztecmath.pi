@@ -1,0 +1,31 @@
+/* Janko erich Friedman Aztec Math
+https://erich-friedman.github.io/puzzle/aztec/ */
+import cp.
+
+main(No) =>
+    input(No, M), N = len(M), M :: 1..9, 
+    % Each number is the sum, difference, product, or quotient of the numbers in the two squares immediately below it:
+    foreach(Z in 1..N-1, S in 1..Z)
+            M[Z,S] #= M[Z+1,S] + M[Z+1,S+1] 
+        #\/ M[Z,S] #= abs(M[Z+1,S] - M[Z+1,S+1]) 
+        #\/ M[Z,S] #= M[Z+1,S] * M[Z+1,S+1] 
+        #\/ M[Z+1,S]   #= M[Z,S] * M[Z+1,S+1] 
+        #\/ M[Z+1,S+1] #= M[Z,S] * M[Z+1,S] 
+    end,
+    % The digits in each row will be different:
+    foreach(Row in M) all_different(Row) end,
+    solve(M),
+    foreach(Z in 1..N, S in Z-N+1..Z)  % je Zeile N-1..0 = führende Blanks, dann 1..N Zahlen
+        if S<1 then print(" ") else printf("%d ", M[Z,S]) end, 
+        if S=Z then nl end
+    end. 
+
+input(0, M) => 
+    M = {{8},
+         {_,_},
+         {_,9,_},
+         {8,_,_,2}}. /*
+   8 
+  5 3 
+ 4 9 3 
+8 4 5 2 correct */

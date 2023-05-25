@@ -1,0 +1,69 @@
+/* Janko Erich Friedman 
+https://www.janko.at/Raetsel/Balance-Loop/index.htm 
+Usage: cl(balanceloop), main("../Janko/balanceloop6.txt") 
+ignore the syntax warnings! */
+import sat, util. 
+% helper function for printout:
+edge(Es1,C, Z,S,Z1,S1) = cond((membchk({(Z,S),(Z1,S1),1}, Es1); membchk({(Z1,S1),(Z,S),1}, Es1)), C, ' '). 
+
+main(No) => 
+    input(No, Grid), NZ = len(Grid), NS = len(Grid[1]),
+    Vs = [{(Z,S),1} : Z in 1..NZ, S in 1..NS, Grid[Z,S]=1],   
+    Es = [{(Z,S),(Z1,S1),_} : {(Z,S),1} in Vs, {(Z1,S1),1} in Vs, abs(Z1-Z)+abs(S1-S)=1],
+    Mv = new_array(NZ,NS), Mv :: 0..NZ, % Memory: wieviele Felder seit dem letzten Knick (vorwärts)    
+    Mr = new_array(NZ,NS), Mr :: 0..NZ, % Memory: wieviele Felder seit dem letzten Knick (rückwärts)    
+    path_d(Vs, Es, (NZ,1), (1,NS)), 
+    % Propagiere Mv und Mr und wende Unequal-Constraint an:
+    foreach ({(Zv,Sv),(Z,S),Bv} in Es, {(Z,S),(Zn,Sn),Bn} in Es) 
+        if (Zn = Zv; Sn = Sv) then % geradeaus
+            Bv + Bn #= 2 #=> (Mv[Zn,Sn] #= Mv[Z,S] + 1 #/\ Mr[Zv,Sv] #= Mr[Z,S] + 1)
+                              else % abbiegen: consecutive segments can  v- not -v be the same length      
+            Bv + Bn #= 2 #=> (Mv[Zn,Sn] #= 1 #/\ Mr[Zv,Sv] #= 1 #/\ Mr[Z,S] #!= Mv[Z,S])
+        end
+    end,
+    solve(vars(Mv) ++ vars(Mr) ++ vars(Es)), Chr = " *",
+    foreach(Z in 1..NZ-1)
+        foreach (S in 1..NS-1) printf( "%c%c", Chr[1+Grid[Z,S]],  edge(Es,'-', Z,S, Z,S+1))  end, println(Chr[1+Grid[Z,NS]]),
+        foreach (S in 1..NS)   printf( "%c ",                     edge(Es,'|', Z,S, Z+1,S))  end, nl
+    end,
+    foreach (S in 1..NS-1)     printf( "%c%c", Chr[1+Grid[NZ,S]], edge(Es,'-', NZ,S,NZ,S+1)) end, println(Chr[1+Grid[NZ,NS]]).
+
+    input(0, Grid) =>
+        Grid = {{1,1,0,0,1,1},
+                {1,1,1,1,1,0},        
+                {1,1,1,1,1,1},        
+                {1,1,1,1,1,1},        
+                {1,1,1,1,1,1},        
+                {1,1,1,1,1,1}}. /*
+*-*     *-*
+| |     |   
+* * *-* *  
+| | | | |   
+* * * * *-*
+| | | |   | 
+* *-* *-* *
+|       | | 
+*-*-*-* * *
+      | | | 
+*-*-*-* *-*     CPU time 0.046 seconds, correct */
+    input(26, Grid) =>
+        Grid = {{1,1,1,1,1,1,1},
+                {1,1,1,1,1,1,0},        
+                {1,1,1,1,0,1,1},        
+                {1,1,1,1,1,1,1},        
+                {1,1,1,1,1,1,1},        
+                {1,1,1,1,1,1,1},        
+                {1,0,0,1,1,1,1}}. /*
+*-*-*-*-* *-*
+|       | |   
+* *-*-*-* *  
+| |       |   
+* * *-*   *-*
+| | | |     | 
+* * * * *-* *
+| | | | | | | 
+* * * * * * *
+| | | | | | | 
+* *-* * * * *
+|     | | | | 
+*     *-* *-*   CPU time 0.064 seconds, correct */

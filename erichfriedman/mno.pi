@@ -1,0 +1,48 @@
+/* Janko Erich Friedman MNO
+https://erich-friedman.github.io/puzzle/MNO/ */
+import util, sat.
+signature(L) => % M=1, N=2, O=3, dot=4
+    N = len(L), [I1,I2,IL] :: 1..N, I1 #< I2, % two dots and and one letter
+    element(I1, L, 4), element(I2, L, 4), element(IL, L, MNO), MNO :: 1..3, % dot, dot, letter
+    count(0, L, N-3), % all squares beside these three are empty
+    D1 #= IL - I1, D2 #= I2 - IL, % D1 = distance letter - left dot, D2 = distance right dot - letter
+    MNO #= 1 #=>  (D1 #= D2 #/\ D1 #> 0),              % M is the M_idpoint of the dots
+    MNO #= 2 #=>  (D1 #!= D2 #/\ D1 #> 0 #/\ D2 #> 0), % N is between the dots but N_ot the midpoint
+    MNO #= 3 #=>  (D1 #< 0 #\/ D2 #< 0).               % O is O_utside the dots
+
+main(P) =>
+    input(P, M), N = len(M), M :: 0..4,
+    foreach(L in M.rows() ++ M.columns()) signature(L) end,
+    solve(M), Chr = " MNO*", 
+    foreach(Z in 1..N, S in 1..N)
+        printf("%c|", Chr[1+M[Z,S]]), if S = N then nl end
+    end.
+
+input(0,M) => % M=1, N=2, O=3, dot=4
+    M = {{_,_,_,_,_},
+         {_,_,_,2,_},
+         {_,_,4,_,_},
+         {_,_,_,_,3},
+         {_,_,4,_,_}}. /* 
+ | |O|*|*|
+ |*| |N|*|
+*|M|*| | |
+*|*| | |O|
+O| |*|*| |
+CPU time 0.038 seconds, korrekt */
+input(24,M) => % M=1, N=2, O=3, dot=4
+    M = {{_,_,4,3,_,_,_},
+         {_,_,_,_,_,_,4},
+         {_,_,_,_,_,_,4},
+         {4,_,_,_,_,_,_},
+         {_,_,2,_,_,_,_},
+         {4,_,_,4,_,_,_},
+         {_,_,_,_,3,_,_}}. /* 
+ |*|*|O| | | |
+O| | | | |*|*|
+ | | | |*|M|*|
+*|N| | | |*| |
+ |*|N| |*| | |
+*| | |*| | |O|
+ | |*|*|O| | |
+CPU time 0.067 seconds, correct */

@@ -1,0 +1,35 @@
+/* Janko erich Friedman Pyramid 
+https://erich-friedman.github.io/puzzle/pyramid/ */
+import cp.
+
+main(No) =>
+    input(No, Cs), N = len(Cs), 
+    % Für die Pyramide gilt, dass nur Zahlen von 1 bis 9 eingetragen werden dürfen:
+    M = {{cond((ground(X), X > 0), X, _) : S in 1..Z, X = Cs[Z,S]} : Z in 1..N}, 
+    M :: 1..9, Color = [_Blue,_Red], Color :: 1..9,
+    foreach(Z in 1..N, S in 1..Z, X = Cs[Z,S], ground(X), X < 0)
+        M[Z,S] #= Color[-X]
+    end,
+    % Jede Zahl, die sich über zwei anderen Zahlen befindet, 
+    % ist die Summe oder die Differenz der beiden Zahlen darunter:
+    foreach(Z in 1..N-1, S in 1..Z)
+        M[Z,S] #= M[Z+1,S] + M[Z+1,S+1] #\/ M[Z,S] #= abs(M[Z+1,S] - M[Z+1,S+1]) 
+    end,
+    solve(Color ++ vars(M)),
+    foreach(Z in 1..N, S in Z-N+1..Z)  % je Zeile N-1..0 = führende Blanks, dann 1..N Zahlen
+        if S<1 then print(" ") else printf("%d ", M[Z,S]) end, 
+        if S=Z then nl end
+    end. 
+
+input(0, Cs) => 
+    B = -1, R = -2,
+    Cs = {{B},
+          {5,_},
+          {B,_,R},
+          {_,_,_,8},
+          {7,_,R,_,_}}. /*
+    1 
+   5 6 
+  1 4 2 
+ 3 2 6 8 
+7 4 2 4 4       correct */

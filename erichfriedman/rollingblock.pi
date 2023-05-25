@@ -1,0 +1,108 @@
+/* Janko Erich Friedman Rolling Block Mazes for arbitrary slabs
+Usage: update final state according to selected instance, call main(<instance no.>)
+https://erich-friedman.github.io/puzzle/rolling/ */
+import planner.
+
+main(No) =>	
+    input(No, C, Slab), 
+    best_plan([C, Slab], Plan),
+    println(Plan).
+
+final(State) =>  % (Z,S,U) wobei U das Stockwerk ist
+    % State = [_, [(3,5,1),(3,5,2),(4,5,1),(4,5,2)]]. % instance 1
+    % State = [_, [(3,7,1),(3,7,2),(3,8,1),(3,8,2)]]. % instance 2
+    % State = [_, [(7,3,1),(7,3,2),(7,4,1),(7,4,2)]]. % instance 3
+    % State = [_, [(5,5,1),(5,6,1),(6,5,1),(7,5,1),(7,6,1)]]. % instance 5
+    State = [_, [(7,4,1),(7,5,1),(8,4,1),(9,4,1),(9,5,1)]]. % instance 6
+
+action([C, Slab], State1, Action, Cost) =>
+    Cost = 1, NZ = len(C), NS = len(C[1]), 
+    between(1, 4, Dir), Chr = "NESW", Action = Chr[Dir], % moving direction N=1, E=2, S=3, W=4
+    Slab1 = [],
+    if     Dir = 1 then % N
+        Zmin = min([Z : (Z,_,_) in Slab]), 
+        foreach((Z,S,U) in Slab) 
+            Z1 = Zmin - U, U1 = 1 + Z - Zmin, 0 < Z1, 
+            if U1 = 1 then C[Z1,S] = 0 end,
+            Slab1 := [(Z1,S,U1)|Slab1]
+        end
+    elseif Dir = 3 then  % S
+        Zmax = max([Z : (Z,_,_) in Slab]), 
+        foreach((Z,S,U) in Slab) 
+            Z1 = Zmax + U, U1 = 1 + Zmax - Z, Z1 =< NZ, 
+            if U1 = 1 then C[Z1,S] = 0 end,
+            Slab1 := [(Z1,S,U1)|Slab1]
+        end
+    elseif Dir = 2 then  % E
+        Smax = max([S : (_,S,_) in Slab]), 
+        foreach((Z,S,U) in Slab) 
+            S1 = Smax + U, U1 = 1 + Smax - S, S1 =< NS,
+            if U1 = 1 then C[Z,S1] = 0 end,
+            Slab1 := [(Z,S1,U1)|Slab1]
+        end
+    elseif Dir = 4 then  % W
+        Smin = min([S : (_,S,_) in Slab]), 
+        foreach((Z,S,U) in Slab) 
+            S1 = Smin - U, U1 = 1 + S - Smin, 0 < S1, 
+            if U1 = 1 then C[Z,S1] = 0 end,
+            Slab1 := [(Z,S1,U1)|Slab1]
+        end
+    end,
+    State1 = [C, sort(Slab1)].
+
+input(1, C, Slab) =>
+    Slab = [(1,6,1),(1,6,2),(2,6,1),(2,6,2)], % Liste der Raum-Koordinaten (Z,S,U)
+    C = {{0,0,0,0, 0,0,0,1},
+         {0,0,0,0, 1,0,0,0},
+         {0,0,0,0, 0,0,0,0},
+         {0,0,1,0, 0,0,1,0},
+         {0,0,0,1, 0,0,1,0},
+         {0,0,0,0, 0,0,0,0},
+         {0,0,0,0, 0,0,0,0},
+         {0,0,0,1, 0,0,0,0}}. /*
+SSSENWWWSENWNNNESWSSEEEENNWNWWSWSSEEENNWNWWSSSENEESWNN correct */
+input(2, C, Slab) =>
+    Slab = [(5,4,1),(5,4,2),(6,4,1),(6,4,2)], 
+    C = {{0,0,0,0, 0,0,0,0},
+         {0,0,0,0, 0,0,0,0},
+         {0,0,0,0, 1,0,0,0},
+         {0,0,0,1, 0,1,0,0},
+         {0,0,1,0, 0,0,1,0},
+         {0,0,0,0, 0,0,0,0},
+         {0,0,0,0, 0,0,0,0},
+         {0,0,0,1, 0,0,0,0}}. /*
+ESWWNNNNESWSSEEEENNWNWWSWSSEEESENWWWWNNENEEES correct */
+input(3, C, Slab) =>
+    Slab = [(2,2,1),(2,2,2),(3,2,1),(3,2,2)],
+    C = {{0,0,0,0, 0,0,0,0},
+         {0,0,0,1, 0,0,0,0},
+         {0,0,0,0, 0,0,0,0},
+         {0,0,1,0, 1,0,0,0},
+         {0,0,1,0, 1,0,0,0},
+         {0,0,0,0, 0,0,1,0},
+         {0,0,0,0, 0,1,0,0},
+         {0,0,0,0, 0,0,0,0}}. /*
+SSESWNEESWNWNNENEESESWNWWNWSSSENESWWNNNEEESWNENWWWSSSSE CPU time 0.0 seconds, correct */
+input(5, C, Slab) =>
+    Slab = [(4,2,1),(4,3,1),(5,2,1),(6,2,1),(6,3,1)],
+    C = {{0,0,0,0, 0,0,0,0},
+         {0,0,0,0, 0,0,0,0},
+         {0,0,1,0, 0,0,0,0},
+         {0,0,0,0, 0,0,1,0},
+         {0,0,0,0, 0,0,0,0},
+         {0,0,0,1, 0,0,0,0},
+         {0,0,0,0, 0,0,0,0},
+         {0,0,0,0, 0,0,0,0}}. /*
+WSEENNENWSSENWSWSENNWNNESESSWWWNNENESS CPU time 0.046 seconds, korrekt (PB checked)! */
+input(6, C, Slab) =>
+    Slab = [(2,3,1),(2,5,1),(3,3,1),(3,4,1),(3,5,1)],
+    C = {{0,0,0, 0,0,0, 0,0,0},
+         {0,0,0, 1,0,0, 0,0,0},
+         {0,0,0, 0,0,0, 1,0,0},
+         {0,0,1, 0,0,0, 0,0,0},
+         {0,0,0, 0,0,0, 0,0,0},
+         {0,0,0, 0,0,1, 0,0,0},
+         {0,0,1, 0,0,0, 0,0,0},
+         {0,0,0, 0,0,0, 0,1,0},
+         {0,0,0, 0,0,0, 0,0,0}}. /*
+NWSSSEENENESWWSENNNWWSESEENWWSEENNWSWSENWWNEESWSS CPU time 0.046 seconds, korrekt */

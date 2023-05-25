@@ -1,0 +1,28 @@
+/* Janko Erich Friedman Pieces of Eight - using scc_grid(A)
+https://erich-friedman.github.io/puzzle/loopcount/ */
+import util,sat. 
+main ?=>
+    Sums = [_,30,_,_,48,_, _,_,20,_,_,32], % waagrecht, senkrecht 
+    N = 6, M = new_array(N,N), M :: 1..8, Mvars = vars(M), % each cell contains a number from 1 to 8
+    foreach(I in 1..8) count(I, Mvars, I) end, % there are n occurences of the digit n
+    % The number on the right of a row or below a column are the sum of the digits in that row or column
+    foreach({Lst,Sum} in zip(M.rows()++M.columns(), Sums)) sum(Lst) #= Sum end,
+    % All digits are adjacent to one another:
+    Q = new_array(8,N,N), Q :: 0..1,
+    foreach(I in 1..8)
+        foreach(Z in 1..N, S in 1..N) Q[I,Z,S] #= 1 #<=> M[Z,S] #= I end, 
+        scc_grid(Q[I])
+    end,
+    M[1,1] #= 3, % magic to get an unique solution (remove for other instances!)
+    solve(Mvars ++ vars(Q)),  
+    foreach(Z in 1..N)
+    	foreach(S in 1..N) printf("%d |", M[Z,S]) end, nl 
+    end,
+    nl, fail.  /* 
+3 |3 |3 |7 |7 |5 |
+6 |6 |1 |7 |5 |5 |
+6 |6 |2 |7 |7 |5 |
+6 |6 |2 |7 |7 |5 |
+8 |8 |8 |8 |8 |8 |
+8 |8 |4 |4 |4 |4 |
+CPU time 2.212 seconds, no more solutions, korrekt */

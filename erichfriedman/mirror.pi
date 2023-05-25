@@ -1,0 +1,51 @@
+/* Janko erich Friedman Mirror
+https://erich-friedman.github.io/puzzle/mirror/ */
+import cp.
+
+main(No) =>
+    input(No, CntSr, CntWr, Max), N = len(CntSr[1]), 
+    M  = new_array(N,N), M :: 0..2, % 0=person, 1=/, 2=\
+    % Betrachte die Begrenzungslinien der Felder und dekrementiere deren Werte auf ..
+    % .. dem Weg des Sehstrahls vom Cnt-Startwert am Rand bis 0 beim Verlassen der Matrix:
+    Sr = new_array(2,N,N+1), Sr :: 0..Max, % Sr[1] = >, Sr[2] = < (senkrechte Begrenzungslinien)
+    Wr = new_array(2,N+1,N), Wr :: 0..Max, % Wr[1] = v, Wr[2] = ^ (waagrechte Begrenzungslinien)
+    foreach(I in 1..N) % Cnt-Startwert wie am Rand vorgegeben, Endwert 0:
+        Sr[1,I,1]   #= CntSr[1,I], Sr[1,I,N+1] #= 0,
+        Sr[2,I,N+1] #= CntSr[2,I], Sr[2,I,1]   #= 0, 
+        Wr[1,1,I]   #= CntWr[1,I], Wr[1,N+1,I] #= 0, 
+        Wr[2,N+1,I] #= CntWr[2,I], Wr[2,1,I]   #= 0
+    end,
+    % Folge dem Sehstrahl durch die Personen und die Spiegel:
+    foreach(Z in 1..N, S in 1..N, D in 0..1) % D=0: > bzw. v; D=1: < bzw. ^
+        M[Z,S] #= 0 #=> (Sr[1+D,Z,S+D] - 1 #= Sr[1+D,Z,S+1-D] #/\ Wr[1+D,Z+D,S] - 1 #= Wr[1+D,Z+1-D,S]), % decrement
+        M[Z,S] #= 1 #=> (Sr[1+D,Z,S] #= Wr[1+1-D,Z,S] #/\ Sr[1+1-D,Z,S+1] #= Wr[1+D,Z+1,S]), % /-Reflexion
+        M[Z,S] #= 2 #=> (Sr[1+D,Z,S] #= Wr[1+D,Z+1,S] #/\ Sr[1+D,Z,S+1]   #= Wr[1+D,Z,S])    % \-Reflexion 
+    end,
+    solve(vars(M) ++ vars(Sr) ++ vars(Wr)), Chr = "o/\\",
+    foreach(Z in 1..N, S in 1..N)
+        printf("%c|", Chr[1+M[Z,S]]), if S = N then nl end
+    end.
+
+input(0, CntSr, CntWr, Max) => 
+    CntSr = [[_,1,_], [0,4,3]], % >, <
+    CntWr = [[_,_,_], [_,_,0]], % v, ^ 
+    Max = 4. /*
+o|o|\|
+/|o|o|
+\|/|\|  correct */
+input(1, CntSr, CntWr, Max) => 
+    CntSr = [[_,0,_], [_,_,_]], % >, <
+    CntWr = [[_,_,5], [_,2,_]], % v, ^ 
+    Max = 5. /*
+\|\|o|
+/|o|o|
+\|o|/|  correct */
+input(25, CntSr, CntWr, Max) => 
+    CntSr = [[_,3,0,6,_], [_,_,3,0,6]], % >, <
+    CntWr = [[_,_,_,2,_], [_,_,_,_,_]], % v, ^ 
+    Max = 6. /*
+/|\|o|o|\|
+/|\|o|\|o|
+/|\|\|/|\|
+o|/|\|/|\|
+\|o|o|o|o|      CPU time 0.436 seconds, correct */

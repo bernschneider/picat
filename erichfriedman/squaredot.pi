@@ -1,0 +1,84 @@
+/* Janko Erich Friedman Square Dot
+https://erich-friedman.github.io/puzzle/dots/ */
+import sat, util.
+
+main(No) =>
+    input(No, Dots), N = len(Dots), Max = sum(array_matrix_to_list(Dots)) // 4,
+    % Zeichne die vier Ecken der Quadrate 1..Max in M ein:
+    M = new_array(N,N), M :: 0..Max, Mvars = vars(M),
+    foreach(Q in 1..Max) count(Q, Mvars, 4) end, 
+    % DZ|DS führt zur nächsten Ecke des Quadrats im Uhrzeigersinn:
+    DZ = new_array(N,N), DZ :: -N+1..N-1,
+    DS = new_array(N,N), DS :: -N+1..N-1,
+    foreach(Z in 1..N, S in 1..N) 
+        Dots[Z,S] #= 0 #<=> M[Z,S] #= 0,
+        Dots[Z,S] #= 0 #<=> DZ[Z,S] #=0 #/\ DS[Z,S] #=0
+    end,
+    foreach(Z in 1..N, S in 1..N, Dots[Z,S] = 1)
+        Z1 #= Z + DZ[Z,S], S1 #= S + DS[Z,S], % Z1|S1 = nächste Ecke des Quadrats
+        matrix_element(M, Z1, S1, M[Z,S]),    % M[Z1|S1] = M[Z,S]
+        % DZ|DS wird für Z1|S1 um 90 Grad im Uhrzeigersinn gedreht:
+        matrix_element(DZ, Z1, S1, DS[Z,S]),
+        matrix_element(DS, Z1, S1, DS1), DS1 #= -DZ[Z,S]
+    end,
+    solve(vars(DZ) ++ vars(DS) ++ vars(M)), 
+    foreach(Z in 1..N)
+        foreach(S in 1..N)
+		    if M[Z,S] = 0 then print(" |") else printf("%c|", chr(96+M[Z,S])) end
+    	end, nl
+    end.
+
+input(pb, Dots) =>  
+    Dots = {{1,1,0,1},
+            {0,0,0,1},
+            {1,0,0,0},
+            {1,0,1,1}}. /*
+a|b| |a|
+ | | |b|
+b| | | |
+a| |b|a|       CPU time 0.024 second, korrekt */
+input(0, Dots) =>  
+    Dots = {{0,1,0,0,0,0,1},
+            {1,1,1,1,1,1,1},
+            {0,1,1,1,1,1,1},
+            {0,1,1,1,1,1,1},
+            {1,0,1,1,1,1,0},
+            {1,1,1,1,1,1,1},
+            {0,0,1,1,1,0,0}}. /*
+ |f| | | | |f|
+h|i|e|h|c|d|c|
+ |e|a|e|d|i|d|
+ |a|e|a|c|d|c|
+h| |a|h|b|b| |
+i|f|g|g|b|b|f|
+ | |g|g|i| | |     CPU time 0.561 seconds, korrekt  */
+input(1, Dots) =>  
+    Dots = {{0,0,1,1,1,0},
+            {1,0,1,1,1,1},
+            {1,1,1,1,1,1},
+            {0,1,1,1,0,1},
+            {0,1,1,1,1,1},
+            {1,1,1,1,1,0}}. /*
+ | |c|e|c| |
+b| |d|g|b|d|
+e|a|c|a|c|g|
+ |f|g|f| |e|
+ |a|d|a|g|d|
+b|f|e|f|b| |       CPU time 0.185 seconds, korrekt */
+input(25, Dots) =>  
+    Dots = {{0,1,1,0,1,0,1,1},
+            {1,1,1,1,1,1,1,1},
+            {1,1,1,1,1,1,1,1},
+            {1,1,0,1,1,0,0,1},
+            {0,1,1,1,1,1,0,1},
+            {1,0,1,1,1,1,1,0},
+            {1,1,0,1,1,1,1,1},
+            {1,1,1,0,1,1,1,1}}. /*
+ |h|j| |k| |b|k|
+h|g|h|g|l|b|j|b|
+e|h|d|e|d|f|b|f|
+l|g| |g|k| | |k|
+ |j|d|a|d|f| |f|
+e| |a|e|a|j|l| |
+i|i| |a|m|m|c|c|
+i|i|l| |m|m|c|c|       CPU time 2.169 seconds, korrekt */

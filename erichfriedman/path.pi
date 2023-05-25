@@ -1,0 +1,57 @@
+/* Janko Erich Friedman Path
+https://erich-friedman.github.io/puzzle/path/ */
+import sat, util. 
+
+main(No) => 
+    input(No, M0), N = len(M0), Mlist = array_matrix_to_list(M0),
+    Pmax = sum([1 : X in Mlist, X > 0]), % number of paths
+    [Z0,S0] :: 1..N, % all paths meet at Z0|S0
+    % M[Z,S] = number of turns until the meeting point is reached:
+    M = {{cond(M0[Z,S]=0, _, M0[Z,S]) : S in 1..N} : Z in 1..N}, M :: 0..max(Mlist),
+    % Arrows show the way of the path:
+    Pf = new_array(N,N), Pf :: 0..4, Chr = "<>^v",
+    foreach(Z in 1..N, S in 1..N) 
+        Pf[Z,S] #= 0 #=> M[Z,S] #= 0, % 0 turns at not used points or at the meeting point
+        % Compute the number of predecessors Pre of the point Z|S:
+        if S < N then Left  #= (Pf[Z,S+1] #= 1) else Left #= 0 end,
+        if S > 1 then Right #= (Pf[Z,S-1] #= 2) else Right  #= 0 end,
+        if Z < N then Up    #= (Pf[Z+1,S] #= 3) else Up #= 0 end,
+        if Z > 1 then Down  #= (Pf[Z-1,S] #= 4) else Down #= 0 end,
+        Pre #= Left + Right + Up + Down, Pre :: [0,1,Pmax], 
+        if M0[Z,S] > 0 then 
+              Pre #= 0 % a starting point of a path has no predecessors
+        else (Z #= Z0  #/\ S #= S0)  #=> (Pre #= Pmax #/\ Pf[Z,S] #= 0), % at the meeting point
+             (Z #!= Z0 #\/ S #!= S0) #=>  Pre #= (Pf[Z,S] #> 0) % at other points
+        end,
+        % If you go straight, M[Z,S] is copied; if you turn, M[Z,S] is decremented:
+        if S>1 then Pf[Z,S] #=  1 #=> M[Z,S-1] #= M[Z,S] - (Pf[Z,S-1] #!= 1) else Pf[Z,S] #!= 1 end,
+        if S<N then Pf[Z,S] #=  2 #=> M[Z,S+1] #= M[Z,S] - (Pf[Z,S+1] #!= 2) else Pf[Z,S] #!= 2 end,
+        if Z>1 then Pf[Z,S] #=  3 #=> M[Z-1,S] #= M[Z,S] - (Pf[Z-1,S] #!= 3) else Pf[Z,S] #!= 3 end,
+        if Z<N then Pf[Z,S] #=  4 #=> M[Z+1,S] #= M[Z,S] - (Pf[Z+1,S] #!= 4) else Pf[Z,S] #!= 4 end
+    end,
+    solve(vars(M) ++ vars(Pf) ++ [Z0,S0]),
+    foreach(Z in 1..N, S in 1..N) 
+        if     Pf[Z,S] > 0    then printf("%d%c|", M[Z,S], Chr[Pf[Z,S]])
+        elseif Z = Z0, S = S0 then print("0*|")
+        else   print("  |")
+        end,
+        if S = N then nl end
+    end.
+
+input(0, M0) =>
+    M0 = {{2,0,0}, {2,0,0}, {0,0,1}}. /*
+2>|1v|  |
+2v|1v|  |
+1>|0*|1<| correct */
+input(1, M0) =>
+    M0 = {{3,3,0}, {0,0,0}, {1,0,0}}. /*
+3v|3>|2v|
+2>|1v|2v|
+1>|0*|1<| correct */
+input(14, M0) =>
+    M0 = {{0,2,0,0,0}, {0,0,0,0,3}, {0,0,0,0,0}, {5,0,0,0,0}, {0,0,0,4,0}}. /*
+  |2v|1v|2<|2<|
+  |2v|1v|  |3^|
+  |1>|0*|1<|1<|
+5v|2>|1^|3>|2^|
+4>|3^|  |4^|  | CPU time 0.017 seconds, correct */

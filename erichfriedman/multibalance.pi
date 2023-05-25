@@ -1,0 +1,59 @@
+/* Janko Erich Friedman Multi-Balance
+https://erich-friedman.github.io/puzzle/2Dweight/ */
+import util, smt. 
+
+main(Nr) =>
+    input(Nr, Max, F), NR = len(F), NC = len(F[1]), 
+    % Put the digits 1..Max, each used exactly once, into the grid:
+    M = new_array(NR, NC), Mvars = vars(M), Mvars :: 0..Max, 
+    all_different_except_0(Mvars), sum(Mvars) #= Max * (Max + 1) // 2,    
+    foreach(R in 1..NR, C in 1..NC, F[R,C] = 1) M[R,C] #= 0 end,
+    foreach({LF,LM} in zip(F.rows() ++ F.columns(), M.rows() ++ M.columns())) 
+        Cnt #= sum([(X #> 0) : X in LM]), Cnt #!= 1, % no row or column contains exactly one digit
+        if sum(LF) = 1 then  
+            % each fulcrum is located where those weights would balance, with equal torques on both sides:
+            IF = find_first_of(LF, 1), % index of the fulcrum
+            sum([LM[I] * (IF - I) : I in 1..len(LM)]) #= 0
+        else         % every row or column that contains 2 or more digits contains exactly one fulcrum:
+            Cnt #= 0 % in other words: Rows/Cols with not exactly one fulcrum have no digit 
+        end
+    end,
+    solve(M), 
+    foreach(R in 1..NR, C in 1..NC) 
+        if     F[R,C] = 1 then print("+|")
+        elseif M[R,C] > 0 then printf("%d|", M[R,C])    
+        else                   print(" |")
+        end,
+        if C = NC then nl end 
+    end.
+
+input(0, Max, F) => 
+    Max = 6,
+    F = {{0,0,0,0,0,0,1,0},
+         {0,0,0,1,0,0,0,0},
+         {1,0,0,0,0,0,0,1},
+         {0,0,0,0,0,0,0,0},
+         {0,0,0,0,0,0,0,0},
+         {0,0,0,0,0,1,0,0}}. /* 
+1| | | | | |+|6|
+4| | |+| | | |3|
++| | | | | | |+|
+ | | | | | | | |
+ | | | | | | | |
+2| | | | |+| |5|
+CPU time 0.217 seconds, correct */
+input(5, Max, F) => 
+    Max = 8,
+    F = {{0,0,0,0,1,0,0},
+         {0,0,0,0,1,0,0},
+         {1,0,0,0,0,0,1},
+         {0,0,0,0,0,0,0},
+         {0,1,0,0,0,0,0},
+         {0,0,0,1,0,0,0}}. /* 
+4| | | |+| |8|
+1|2| | |+| |5|
++| | | | | |+|
+ | | | | | | |
+ |+| | | | | |
+3|6| |+| | |7|
+CPU time 0.234 seconds, correct */

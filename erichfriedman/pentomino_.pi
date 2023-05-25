@@ -1,0 +1,45 @@
+/* Janko Pentominos
+https://www.janko.at/Raetsel/Pentominos/001.a.htm */
+import sat, util, matrixP. % matrixP ist speziell für dieses Rätsel erstellt
+main =>
+    X = -1, println(X),
+    M = {{_,_,_,_,_, _,_,_,_,X, X,_,_,_,_, _,_,_,_,_, _,_,_,_,_, _,_,_,_,_, _,_,_,_,_, 0,0,0,0},
+         {_,_,_,_,_, _,_,_,_,_, _,_,_,_,_, _,_,_,_,_, _,_,_,_,_, _,_,_,_,_, X,_,_,X,X, 0,0,0,0},
+         {_,_,_,_,_, _,_,_,_,_, _,_,_,_,_, _,_,_,_,_, _,_,_,X,_, X,_,_,_,X, _,_,_,_,_, 0,0,0,0},
+         {X,_,X,_,_, X,_,_,_,_, _,_,_,_,_, _,_,_,_,_, _,_,_,_,_, _,_,_,_,_, _,_,_,_,_, 0,0,0,0},
+         {_,_,_,_,_, _,_,_,X,_, _,_,X,_,X, _,X,_,_,_, _,_,_,_,_, _,_,_,_,_, _,_,_,_,_, 0,0,0,0},
+         {_,_,_,_,_, _,_,_,_,_, _,_,_,_,_, _,_,_,_,_, _,_,_,_,_, _,_,_,_,_, _,_,_,_,_, 0,0,0,0},
+         {_,_,_,_,_, X,_,_,_,_, _,_,_,_,_, _,_,_,_,X, X,X,X,X,_, _,_,_,_,_, _,_,_,_,_, 0,0,0,0},
+         {_,_,_,_,_, _,_,_,_,_, _,_,_,_,_, _,_,_,_,_, _,_,_,_,_, _,_,_,_,_, _,_,X,_,_, 0,0,0,0},
+	     {0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0},
+	     {0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0},
+	     {0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0},
+	     {0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0,0, 0,0,0,0}}, 
+    M :: X..12, NZ = len(M) - 4, NS = len(M[1]) - 4,
+    foreach(Z in 1..NZ, S in 1..NS, var(M[Z,S])) M[Z,S] #> X end, % no additional triangles!
+    % Each pentomino or triangle that is not at the bottom is supported by another pentomino:
+    foreach(Z in 1..NZ-1, S in 1..NS) 
+        M[Z,S] #= X #=>  M[Z+1,S] #> 0, % triangle
+        M[Z,S] #> 0 #=> sum([(M[Z1,S1] #= M[Z,S])*((M[Z1+1,S1] #> 0)*(M[Z1+1,S1] #!= M[Z,S]) + (M[Z+1,S1] #> 0)) : 
+            Z1 in [Z,Z-1], Z1>0, S1 in 1..NS]) #> 0 % pentomino
+    end,
+    generate(P),  % P[1] = X-Pentomino, dann kommen P[2] = I, P[3] = Z, usw. U, V, P, X, W, T, F, Y, N, L (aus Modul matrixP)
+    Np = len(P), 
+    foreach(I in 1..Np) count(I, vars(M), 5) end, % 12 Pentominos
+    Idx = new_list(Np), % X hat 1 Drehvariante, I und Z jeweils 2, der Rest 4:
+    Idx[1] #= 1, [Idx[2],Idx[3]] :: 1..2, Idx :: 1..4,
+    DZ = new_list(Np), DZ :: 0..NZ-1, % Translation des I.ten Pentominos
+    DS = new_list(Np), DS :: 0..NS-1,
+    foreach(I in 1..Np, J in 1..4) % Constraint nur, wenn Idx[I] #= J!
+        PZ = len(P[I,J]), PS = len(P[I,J,1]), 
+        foreach(DZI in 0..NZ-1, DSI in 0..NS-1, Z in 1..PZ, S in 1..PS, P[I,J,Z,S]=1) 
+            (Idx[I] #= J #/\ DZ[I] #= DZI #/\ DS[I] #= DSI) #=> M[DZI+Z,DSI+S] #= I
+        end
+    end,
+    solve(vars(M) ++ DZ ++ DS ++ Idx),
+    Chr = "^ XIZUVPWTFYNL",
+    foreach(Z in 1..NZ)
+        foreach(S in 1..NS)
+		    printf("%c|", Chr[2 + M[Z,S]]) 
+    	end, nl
+    end. /* to be tested */

@@ -1,0 +1,67 @@
+/* Janko Erich Friedman Non-crossing with not-intersect constrain (see lines 24f)
+https://erich-friedman.github.io/puzzle/non/ 
+TBD: include \ crossing after line 17 */
+import sat, util. 
+
+main(No) ?=>
+input(No, C), NZ = len(C), NS = len(C[1]), Start = (NZ+1,1), Finish = (NZ+1,2),
+    Max = sum([cond(C[Z,S] = 0, 0, 1) : Z in 1..NZ, S in 1..NS]),
+    Vs = [{(Z,S),1} : Z in 1..NZ, S in 1..NS, C[Z,S] != 0] ++ [{Start,1}, {Finish,1}], % ++ dummy vertices
+    VMap = new_map(), foreach ({(Z,S),B} in Vs) VMap.put({Z,S}, B) end,
+    Es = [{(Z,S),(Z1,S1),_} : {(Z,S),1} in Vs, {(Z1,S1),1} in Vs, (Z1,S1) != (Z,S), Z1 =< NZ, Z =< NZ, 
+                             if S = S1 then foreach(Z2 in min(Z,Z1)+1..max(Z,Z1)-1) C[Z2,S] = 0 end end, % edge does not ..
+                             if Z = Z1 then foreach(S2 in min(S,S1)+1..max(S,S1)-1) C[Z,S2] = 0 end end, % ..cross other circles
+                             if Z + S = Z1 + S1 then % .. also not diagonally /
+                                Z3 = min(Z,Z1), Z4 = max(Z,Z1), D = Z4 - Z3, S3 = max(S,S1),
+                                foreach(I in 1..D-1) C[Z3+I*D,S3-I*D] = 0 end 
+                             end ] % TBD: same for Z - S = Z1 - S1
+         ++ [{(NZ+1,1),(Z,S),_} : Z in 1..NZ, S in 1..NS, C[Z,S] != 0]  % edges from dummy Start
+         ++ [{(Z,S),(NZ+1,2),_} : Z in 1..NZ, S in 1..NS, C[Z,S] != 0], % edges to dummy Finish
+    % Count the steps of the path; a number n in a circle indicates that it is the nth circle visited:
+    Step = new_array(NZ,NS), Step :: 0..Max, 
+    foreach( Z in 1..NZ, S in 1..NS, C[Z,S] != x) Step[Z,S] #= C[Z,S] end, 
+    foreach(Z in 1..NZ, S in 1..NS) if C[Z,S] = 0 then Step[Z,S] #= 0 else Step[Z,S] #> 0 end end,
+    foreach({(Z1,S1),(Z2,S2),B} in Es, Z1 =< NZ, Z2 =< NZ) B #=> Step[Z2,S2] #= Step[Z1,S1] + 1 end, 
+    % The path does not cross itself:
+    foreach({(Az,As),(Bz,Bs),B1} in Es, {(Cz,Cs),(Dz,Ds),B2} in Es, Az =< NZ, Bz =< NZ, Cz =< NZ, Dz =< NZ, % normal edge
+        (Az,As) != (Cz,Cs), (Az,As) != (Dz,Ds), (Bz,Bs) != (Cz,Cs), (Bz,Bs) != (Dz,Ds))
+        (B1 #= 1 #/\ B2 #= 1) #=> 
+            % the segments do not cross itself (see https://bryceboe.com/2006/10/23/line-segment-intersection-algorithm/)
+            ( (((Ds-As)*(Cz-Az) #> (Cs-As)*(Dz-Az)) #<=> ((Ds-Bs)*(Cz-Bz) #> (Cs-Bs)*(Dz-Bz))) #\/
+              (((Cs-As)*(Bz-Az) #> (Bs-As)*(Cz-Az)) #<=> ((Ds-As)*(Bz-Az) #> (Bs-As)*(Dz-Az)))    )
+    end,
+    path_d(Vs, Es, Start, Finish),
+    solve(vars(Vs)  ++ vars(Es) ++ vars(Step) ++ values(VMap)),
+    foreach(Z in 1..NZ, S in 1..NS) 
+		if Step[Z,S] = 0 then print("  |") else printf("%2d|", Step[Z,S]) end,
+	    if S = NS then nl end
+    end. 
+
+input(0, C) => 
+    C = {{x,4,0,0}, {0,x,0,6}, {1,0,0,0}, {0,x,x,0}}. /*
+ 3| 4|  |  |
+  | 5|  | 6|
+ 1|  |  |  |
+  | 2| 7|  | CPU time 0.076 second, korrekt */
+input(1, C) => 
+    C = {{x,0,0,9,5}, {x,0,0,x,0}, {0,x,0,0,x}, {0,0,x,0,x}, {3,0,0,0,0}}. /*
+10|  |  | 9| 5|
+ 8|  |  | 6|  |
+  | 7|  |  | 1|
+  |  | 4|  | 2|
+ 3|  |  |  |  | CPU time 0.619 seconds, korrekt */
+input(4, C) => 
+    C = {{0,0,x,0,0}, {0,0,0,x,1}, {0,0,0,0,9}, {0,x,x,x,5}, {x,0,0,0,x}}. /*
+  |  | 2|  |  |
+  |  |  |10| 1|
+  |  |  |  | 9|
+  | 8| 7| 6| 5|
+ 3|  |  |  | 4| CPU time 0.404 seconds, korrekt */
+input(15, C) => 
+    C = {{x,0,x,7,0,0}, {0,0,0,0,0,0}, {0,0,0,x,0,0}, {x,0,x,0,0,0}, {x,8,0,0,x,10}, {0,0,0,x,0,0}}. /*
+ 5|  | 6| 7|  |  |
+  |  |  |  |  |  |
+  |  |  |11|  |  |
+ 4|  | 9|  |  |  |
+ 3| 8|  |  | 1|10|
+  |  |  | 2|  |  | CPU time 0.829 seconds, correct */

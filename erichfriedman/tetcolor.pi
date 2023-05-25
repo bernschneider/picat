@@ -1,0 +1,65 @@
+/* Janko Tet Color
+https://erich-friedman.github.io/puzzle/tetcolor/ */
+import util, sat. 
+
+main(No) =>
+   input(No, Cs), N = len(Cs), Max = sum([cond(Cs[Z,S]>0, 1, 0) : Z in 1..N, S in 1..N]),
+   M = new_array(N,N), M :: 0..Max, Mvars = vars(M),
+   foreach(G in 1..Max)
+      count(G, Mvars, Cnt), Cnt :: [0,4],
+      Cnt #= 4 #<=> sum([(M[Z,S] #= G) : Z in 1..N, S in 1..N, Cs[Z,S] > 0]) #> 0,
+      MG = new_array(N,N), MG :: 0..1, scc_grid(MG),
+      foreach(Z in 1..N, S in 1..N) MG[Z,S] #= (M[Z,S] #= G) end
+   end, 
+   % Berechne die Zahl der Nachbarn: 
+   ONb = new_array(N,N), ONb :: 0..3, % Zahl der orthogonalen Nachbarn
+   DNb = new_array(N,N), DNb :: 0..1, % hat diagonalen Nachbar
+   foreach(Z in 1..N, S in 1..N)
+   		Fb #= M[Z,S], 
+   		ONb[Z,S] #= sum([(M[Z1,S1] #= Fb): {Z1,S1} in [{Z-1,S},{Z,S-1},{Z,S+1},{Z+1,S}], Z1>0, Z1=<N, S1>0, S1=<N]),
+   		DNb[Z,S] #= (sum([(M[Z1,S1] #= Fb): {Z1,S1} in [{Z-1,S-1},{Z-1,S+1},{Z+1,S-1},{Z+1,S+1}], Z1>0, Z1=<N, S1>0, S1=<N]) #> 0)
+   end,
+   SumO = new_list(Max), SumD = new_list(Max), % Summe der ONb bzw. DNb aller Felder eines Tetrominos
+    foreach(G in 1..Max) 
+         SumO[G] #= sum([ONb[Z,S]*(M[Z,S]#=G) : Z in 1..N, S in 1..N]),
+         SumD[G] #= sum([DNb[Z,S]*(M[Z,S]#=G) : Z in 1..N, S in 1..N])
+    end,
+   foreach(Z1 in 1..N, S1 in 1..N, Cs[Z1,S1] > 0, 
+           Z2 in 1..N, S2 in 1..N, Cs[Z2,S2] > 0, (Z1,S1)!=(Z2,S2))
+   		G1 #= M[Z1,S1], G1 #> 0, element(G1, SumO, O1), element(G1, SumD, D1),
+         G2 #= M[Z2,S2], G2 #> 0, element(G2, SumO, O2), element(G2, SumD, D2),
+         Cs[Z1,S1] #= Cs[Z2,S2] #<=> (O1 #= O2 #/\ D1 #= D2)
+   end,
+   Vars = Mvars ++ array_matrix_to_list(ONb) ++ array_matrix_to_list(DNb) ++ SumO ++ SumD, 
+   solve(Vars),
+   foreach(Z in 1..N, S in 1..N) 
+		   if M[Z,S]=0 then print("  ") else printf("%c ",chr(96+M[Z,S])) end,
+	      if S = N then nl end
+   end.
+                % 1-2 -3-4 -5
+input(0, Cs) => % R-Gr-B-Ge-Or
+   Cs = {{0,0,0,4,5,0},
+         {0,0,0,3,0,0},
+         {0,0,0,0,0,0},
+         {0,0,0,0,2,0},
+         {1,5,2,3,0,0},
+         {0,0,0,0,0,0}}. /*
+c c c c b   
+    h h b b 
+  a h h b   
+a a d d d   
+a g d e e   
+g g g e e      CPU time 4.808 seconds, correct */
+input(1, Cs) => 
+   Cs = {{2,0,3,0,0,0},
+         {2,0,0,1,0,0},
+         {0,0,5,0,1,4},
+         {4,0,0,0,0,2},
+         {0,0,0,0,1,0},
+         {4,0,0,0,0,0}}. /*
+b j j j j h 
+b b b i h h 
+  g g i i h 
+f g g   i c 
+f f   k k c 
+f   k k c c    CPU time 43.419 seconds, correkt */

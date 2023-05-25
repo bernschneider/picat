@@ -1,0 +1,55 @@
+/* Janko Erich Friedman Room - mit scc_grid
+https://erich-friedman.github.io/puzzle/room/ */
+import util, sat.
+signature(V, L, K) => % K times V, then != V:
+    foreach(I in 1..len(L)) I #=< K #=> L[I] #= V, I #= K+1 #=> L[I] #!= V end.
+
+main(P) =>
+    input(P, X), N = len(X), 
+    % Divide each house into 3 equal sized rooms:
+    M = new_array(N,N), M :: 1..3, Mvars = vars(M), Sz = N * N // 3, % Sz = 12
+    Grid = new_array(3,N,N), Grid :: 0..1, % one Grid for each room
+    foreach(I in 1..3, Z in 1..N, S in 1..N) M[Z,S] #= I #<=> Grid[I,Z,S] #= 1 end,
+    foreach(I in 1..3) count(I, Mvars, Sz), scc_grid(Grid[I]) end, 
+    % The number in each square indicates how many other squares can be seen from that point horizontally or vertically:
+    foreach(Z in 1..N, S in 1..N, X[Z,S] > 0)
+        Top :: 0..Z-1, Down :: 0..N-Z, Left :: 0..S-1, Right :: 0..N-S, % 0..squares until border
+        X[Z,S] #= Top + Down + Left + Right,
+        signature(M[Z,S], [M[I,S] : I in Z-1..-1..1], Top),  signature(M[Z,S], [M[I,S] : I in Z+1..N], Down), 
+        signature(M[Z,S], [M[Z,J] : J in S-1..-1..1], Left), signature(M[Z,S], [M[Z,J] : J in S+1..N], Right)
+    end,
+    solve(vars(M) ++ vars(Grid)),  
+    foreach(Z in 1..N, S in 1..N)
+        if X[Z,S] = 0 then print(" ") else print(X[Z,S]) end, 
+        printf("%c|", chr(96 + M[Z,S])),
+        if S = N then nl end
+    end.
+
+input(0,X) => 
+    X = {{0,0,0,0,0,0},
+         {0,0,0,0,0,0},
+         {0,0,0,0,0,0},
+         {0,8,0,0,0,0},
+         {0,0,0,0,0,0},
+         {0,0,0,0,0,3}}. /* 
+ c| b| a| a| a| a|
+ c| b| a| a| a| a|
+ c| b| a| a| a| a|
+ c|8b| b| b| b| b|
+ c| b| c| c| c| b|
+ c| c| c| c| b|3b|
+CPU time 0.859 seconds, correct */
+input(10,X) => 
+    X = {{0,0,0,0,0,0},
+         {0,0,0,0,0,8},
+         {0,0,0,5,0,0},
+         {0,1,0,0,0,0},
+         {0,0,0,0,0,0},
+         {0,0,0,8,0,0}}. /* 
+ a| a| a| a| a| b|
+ a| b| b| b| b|8b|
+ a| c| c|5c| b| b|
+ a|1c| a| c| b| b|
+ a| a| a| c| b| b|
+ c| c| c|8c| c| c|
+CPU time 0.202 seconds, correct */

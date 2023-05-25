@@ -1,0 +1,48 @@
+/* Janko Erich Friedman Precise Pointer
+https://erich-friedman.github.io/puzzle/pointer/ */
+import sat, util.
+
+main(No) =>
+    input(No, Max, Cs, Pf),  N = len(Pf), 
+    M = new_array(N,N), M :: 1..Max, 
+    Cs = (Z0,S0,V0), M[Z0,S0] #= V0,  
+    foreach(Z in 1..N, S in 1..N)
+        if      Pf[Z,S]=r_ then L = [M[Z,S1]  : S1 in S+1..N]
+        elseif  Pf[Z,S]=l_ then L = [M[Z,S1]  : S1 in 1..S-1]
+        elseif  Pf[Z,S]=u_ then L = [M[Z1,S]  : Z1 in Z+1..N]
+        elseif  Pf[Z,S]=o_ then L = [M[Z1,S]  : Z1 in 1..Z-1]
+        elseif  Pf[Z,S]=ru then L = [M[Z1,S1] : Z1 in Z+1..N, S1 in S+1..N, Z1-S1=Z-S]
+        elseif  Pf[Z,S]=lo then L = [M[Z1,S1] : Z1 in 1..Z-1, S1 in 1..S-1, Z1-S1=Z-S]
+        elseif  Pf[Z,S]=ro then L = [M[Z1,S1] : Z1 in 1..Z-1, S1 in S+1..N, Z1+S1=Z+S]
+        elseif  Pf[Z,S]=lu then L = [M[Z1,S1] : Z1 in Z+1..N, S1 in 1..S-1, Z1+S1=Z+S]
+        end,
+        nvalue(M[Z,S], L)
+    end,
+    solve(vars(M)), 
+    foreach(Z in 1..N, S in 1..N)
+        printf("%w %d|", Pf[Z,S], M[Z,S]),
+        if S=N then nl end
+    end.
+
+input(1, Max, Cs, Pf) =>
+    Max = 3, Cs = (1,3,2),
+    Pf = {{u_,u_,l_,lu},
+          {ru,r_,u_,lu},
+          {u_,ro,u_,l_},
+          {o_,l_,r_,o_}}. /*
+u_ 3|u_ 2|l_ 2|lu 3|
+ru 2|r_ 1|u_ 1|lu 1|
+u_ 1|ro 2|u_ 1|l_ 2|
+o_ 3|l_ 1|r_ 1|o_ 3| CPU time 0.004 seconds, korrekt */
+input(11, Max, Cs, Pf) =>
+    Max = 4, Cs = (5,1,4),
+    Pf = {{r_,ru,ru,u_,l_},
+          {ro,ru,lu,l_,lo},
+          {r_,lu,lu,ru,l_},
+          {r_,ro,o_,o_,u_},
+          {r_,ro,lo,o_,lo}}. /*
+r_ 4|ru 2|ru 1|u_ 4|l_ 3|
+ro 1|ru 2|lu 2|l_ 2|lo 1|
+r_ 2|lu 1|lu 2|ru 1|l_ 2|
+r_ 3|ro 2|o_ 2|o_ 3|u_ 1|
+r_ 4|ro 2|lo 1|o_ 4|lo 3| CPU time 0.011 seconds, correct */

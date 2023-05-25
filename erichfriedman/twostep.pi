@@ -1,0 +1,95 @@
+/* Janko Erich Friedman Two Step - using hcp constrain 
+https://erich-friedman.github.io/puzzle/2step/ */
+import util, sat.
+lineh(Map, Z,S) = cond(Map.get({Z,S-1, Z,S+1}, 0) + Map.get({Z,S, Z,S+1}, 0) + Map.get({Z,S, Z,S+2}, 0) > 0, 1, 0).
+linev(Map, Z,S) = cond(Map.get({Z-1,S, Z+1,S}, 0) + Map.get({Z,S, Z+1,S}, 0) + Map.get({Z,S, Z+2,S}, 0) > 0, 1, 0).
+
+main(No) =>
+    input(No, Grid), Grid :: 0..1, N = len(Grid), Start = (N,1), Goal = (1,N),
+    Vs = [{(R,C), Grid[R,C]} : R in 1..N, C in 1..N], 
+    Es = [{Goal, Start, 1}] ++ [{(R,C), (R1,C1), _} : R in 1..N, C in 1..N, R1 in 1..N, C1 in 1..N, (R1 = R; C1 = C), (R,C) != (R1,C1), abs(R1 - R) + abs(C1 - C) =< 2],     
+    foreach({(R,C),(R1,C1),B} in Es, abs(R1 - R) + abs(C1 - C) = 2) % if moving two squares in one step:
+        Rm = (R+R1)//2, Cm = (C+C1)//2, % middle point between R|C and R1|C1
+        if ground(Grid[Rm,Cm]), Grid[Rm,Cm] = 0 then B #= 0 end, % black squares must be surrounded
+        B #= 1 #=> Grid[Rm,Cm] #= 0 % no overlap: Rm|Cm is no vertex!
+    end,
+    % The path must alternately step 1 and 2 squares:
+    foreach({(Z1,S1),(Z2,S2),B1} in Es, {(Z2,S2),(Z3,S3),B2} in Es, (Z1,S1) != Goal, (Z2,S2) != Goal) 
+       B1 + B2 #= 2 #=> abs(Z2 - Z1) + abs(S2 - S1) + abs(Z3 - Z2) + abs(S3 - S2) #= 3
+    end,
+    hcp(Vs, Es), 
+    solve(vars(Vs) ++ vars(Es)),
+    EMap = new_map(), foreach({(R,C), (R1,C1), 1} in Es) EMap.put({R,C,R1,C1}, 1), EMap.put({R1,C1,R,C}, 1) end,
+    SGrid = ".*", SHor = " -", SVer = " |",
+    foreach (R in 1..N-1)
+        foreach (C in 1..N-1) printf( "%c%c", SGrid[1+Grid[R,C]], SHor[1 + lineh(EMap, R,C)] ) end, println(SGrid[1+Grid[R,N]]),
+        foreach (C in 1..N)   printf( "%c ",                      SVer[1 + linev(EMap, R,C)] ) end, nl
+    end,
+    foreach (C in 1..N-1) printf( "%c%c", SGrid[1+Grid[N,C]], SHor[1 + lineh(EMap, N,C)] ) end, println(SGrid[1+Grid[N,N]]). 
+    
+input(0, Grid) =>
+    Grid = {{_,_,0,_,1},
+            {_,_,_,_,_},
+            {1,_,_,_,_},
+            {_,_,_,_,_},
+            {1,_,_,_,_}}. /*
+. . . *-*
+      |   
+. . . . .
+      |   
+*-.-*-* .
+|         
+*-.-* . .
+    |     
+*-.-* . . sieht gut aus! */
+input(1, Grid) =>
+    Grid = {{_,_,_,_,1},
+            {_,_,_,_,0},
+            {_,0,_,_,_},
+            {_,_,_,_,_},
+            {1,_,_,_,_}}. /*
+. . . *-*
+      |   
+. . . . .
+      |   
+. . . *-*
+        | 
+. . . . .
+        | 
+*-*-.-*-* correct */
+input(13, Grid) =>
+    Grid = {{_,_,_,_,_,1},
+            {_,_,_,_,1,_},
+            {_,_,_,_,_,_},
+            {_,_,_,_,_,_},
+            {_,1,_,0,_,_},
+            {1,_,_,_,_,_}}. /*
+. . *-.-*-*
+    |       
+. . *-.-*-*
+          | 
+*-* . . . .
+| |       | 
+. . . . *-*
+| |     |   
+* * . . . .
+| |     |   
+* *-.-*-* . correct */
+input(17, Grid) =>
+    Grid = {{_,_,_,_,_,1},
+            {_,1,_,_,_,1},
+            {_,_,_,_,1,_},
+            {_,_,_,_,_,_},
+            {_,_,_,_,_,_},
+            {1,_,_,_,_,_}}. /*
+. *-.-* . *
+  |   |   | 
+. * . *-.-*
+  |         
+. . . . *-*
+  |     | | 
+. * . . . .
+  |     | | 
+. *-.-*-* *
+          | 
+*-.-*-*-.-* looks good! */

@@ -1,0 +1,31 @@
+/* Janko Erich Friedmann Square Tiling
+https://erich-friedman.github.io/puzzle/squaretile/ */
+import sat.
+
+main1 => 
+    % N = 7, Qmax = 10,
+    N = 37, Qmax = 15, % not terminating :-(
+    Z0 = new_array(Qmax), S0 = new_array(Qmax), D = new_array(Qmax),
+    Z0 :: 1..N,           S0 :: 1..N,           D :: 1..N,  
+    Z0[1] #= 1, S0[1] #= 1, decreasing(D),
+    foreach(I in 1..Qmax) Z0[I] + D[I] - 1 #=< N, S0[I] + D[I] - 1 #=< N end,
+    % Die Quadrate füllen das gesamte N * N Quadrat:
+    sum([D[I]**2 : I in 1..Qmax]) #= N * N,
+    % Quadrate überschneiden sich nicht:
+    diffn([[Z0[I], S0[I], D[I], D[I]]: I in 1..Qmax]),
+    % Erzeuge Matrix mit den lfd. Nummern der Rechtecke:
+    solve(Z0 ++ S0 ++ D),
+    % foreach(I in 1..Qmax) println((Z0[I],S0[I],D[I])) end,
+    foreach(Z in 1..N, S in 1..N)
+      foreach(I in 1..Qmax, Z0[I] =< Z, Z < Z0[I]+D[I], S0[I] =< S, S < S0[I]+D[I]) 
+        printf("%2d|", I) 
+      end,
+      if S = N then nl end
+    end. /*
+ 1| 1| 1| 1| 1| 6| 6|
+ 1| 1| 1| 1| 1| 6| 6|
+ 1| 1| 1| 1| 1| 5| 5|
+ 1| 1| 1| 1| 1| 5| 5|
+ 1| 1| 1| 1| 1| 7|10|
+ 2| 2| 4| 4| 3| 3| 9|
+ 2| 2| 4| 4| 3| 3| 8|   CPU time 0.046 seconds, korrekt */

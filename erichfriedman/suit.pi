@@ -1,0 +1,55 @@
+/* Janko Erich Friedmann Following Suit
+https://erich-friedman.github.io/puzzle/suit/ */
+import sat.
+% helper function for printout:
+edge(Es1,C, Z,S,Z1,S1) = cond((membchk({(Z,S),(Z1,S1),1}, Es1); membchk({(Z1,S1),(Z,S),1}, Es1)), C, ' '). 
+
+main(Nr) => 
+    input(Nr, Cs), NZ = len(Cs), NS = len(Cs[1]), 
+    Grid = {{1 : _ in 1..NZ} : _ in 1..NS}, 
+    hcp_grid(Grid, Es), 
+    foreach ({(Z3,S3),(Z2,S2),B3} in Es, {(Z2,S2),(Z1,S1),B2} in Es, {(Z1,S1),(Z,S),B1} in Es,
+             len(remove_dups([Cs[Z,S], Cs[Z1,S1], Cs[Z2,S2], Cs[Z3,S3]])) = 4)
+        B3 + B2 + B1 #< 3
+    end,
+    solve(vars(Es)), Suits = "DHSC", % Diamond-Heart-Spade-Clubs
+    foreach(Z in 1..NZ-1)
+        foreach(S in 1..NS-1) printf( "%c%c", Suits[Cs[Z,S]],  edge(Es,'-', Z,S, Z,S+1))  end, println(Suits[Cs[Z,NS]]),
+        foreach(S in 1..NS)   printf( "%c ",                   edge(Es,'|', Z,S, Z+1,S))  end, nl
+    end,
+    foreach(S in 1..NS-1)     printf( "%c%c", Suits[Cs[NZ,S]], edge(Es,'-', NZ,S,NZ,S+1)) end, println(Suits[Cs[NZ,NS]]).
+
+input(0, Cs) =>
+    D=1, H=2, S=3, C=4,
+    Cs = {{S,C,H,C},
+          {D,D,D,H},
+          {D,C,H,S},
+          {H,C,S,S}}. /*
+S-C H-C
+| | | | 
+D D-D H
+|     | 
+D C-H S
+| | | | 
+H-C S-S
+CPU time 0.014 seconds, korrekt */
+input(16, Cs) =>
+    D=1, H=2, S=3, C=4,
+    Cs = {{S,H,D,S,H,C},
+          {H,S,S,S,D,C},
+          {C,S,S,D,S,H},
+          {H,D,C,S,D,D},
+          {S,S,D,H,C,H},
+          {C,D,C,H,C,C}}. /*
+S-H-D S-H-C
+|   | |   | 
+H S-S S-D C
+| |     | | 
+C S-S-D S H
+|     | | | 
+H-D-C S-D D
+    |     | 
+S-S-D H-C H
+|     | | | 
+C-D-C-H C-C
+CPU time 0.044 seconds, korrekt */

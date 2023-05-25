@@ -1,0 +1,96 @@
+/* Janko Erich Friedman Region Division - mit scc_grid
+https://erich-friedman.github.io/puzzle/divide/  */
+import util, sat.
+main(P) =>
+    input(P, X), 
+    N = len(X), Xvars = vars(X), Xvars :: 1..4, Cnt = (len(Xvars) + 1) // 4, % size of each region
+    Grid = new_array(4,N,N), Grid :: 0..1, % je Gebiet ein Grid
+    % Die Gebiete sind gleich groß und hängen zusammen:
+    foreach(I in 1..4) count(I, Xvars, Cnt), scc_grid(Grid[I]) end, 
+    foreach(I in 1..4, Z in 1..N, S in 1..N)
+        X[Z,S] #= 0 #=>  Grid[I,Z,S] #= 0,
+        X[Z,S] #= I #<=> Grid[I,Z,S] #= 1
+    end,
+    foreach(I in 2..4) % transformiere Gebiet 1 zu Gebiet I
+        % Durch maximal drei Rotationen bzw. Spiegelungen R1, R2, R3 und anschließender Translation werden alle Möglichkeiten abgedeckt!
+         [R1, R2] :: 0..3, R3 :: 0..1, DZ :: -N+1..N-1, DS :: -N+1..N-1,
+         foreach(Z in 1..N, S in 1..N) 
+            % Bilde Z|S auf sein Transformationsbild Z3+DZ|S3+DS ab:
+            % Step 1 (Id, Rotation oder Spiegelung -):
+            Z1 :: 1..N, S1 :: 1..N,
+            R1 #= 0                           #=> Z1 #= Z         #/\ S1 #= S,           % id
+            R1 #= 1                           #=> Z1 #= S         #/\ S1 #= N + 1 - Z,   % rotate right
+            R1 #= 2                           #=> Z1 #= N + 1 - S #/\ S1 #= Z,           % rotate left
+            R1 #= 3                           #=> Z1 #= N + 1 - Z #/\ S1 #= S,           % reflect -
+            % Step 2 (Id, Rotation oder Spiegelung |):
+            Z2 :: 1..N, S2 :: 1..N,
+            (R1 #< 3 #\/ R2 #= 0)             #=> Z2 #= Z1         #/\ S2 #= S1,         % id
+            (R1 #= 3 #/\ R2 #= 1)             #=> Z2 #= S1         #/\ S2 #= N + 1 - Z1, % rotate right
+            (R1 #= 3 #/\ R2 #= 2)             #=> Z2 #= N + 1 - S1 #/\ S2 #= Z1,         % rotate left        
+            (R1 #= 3 #/\ R2 #= 3)             #=> Z2 #= Z1         #/\ S2 #= N + 1 - S1, % reflect |       
+            % Step 3 (Id, oder Spiegelung -):
+            Z3 :: 1..N, S3 :: 1..N,
+            (R1 #< 3 #\/ R2 #< 3 #\/ R3 #= 0) #=> Z3 #= Z2         #/\ S3 #= S2,         % id
+            (R1 #= 3 #/\ R2 #= 3 #/\ R3 #= 1) #=> Z3 #= N + 1 - Z2 #/\ S3 #= S2,         % reflect -
+            % Step 4 (Translation um DZ|DS)
+            % Falls Z|S im Gebiet 1 liegt, muss sich der Zielpunkt Z3+DZ|S3+DS im Grid befinden:
+            X[Z,S] #= 1 #=> (0 #< Z3+DZ #/\ Z3+DZ #=< N #/\ 0 #< S3+DS #/\ S3+DS #=< N),    
+            % Z|S liegt im Gebiet 1 genau dann, wenn Z3+DZ|S3+DS im Gebiet I liegt:   
+            foreach(Zt in 1..N, St in 1..N)       
+                (Zt #= Z3+DZ #/\ St #= S3+DS) #=> (X[Z,S] #= 1 #<=> X[Zt,St] #= I)
+            end
+        end
+    end,
+    J = find_first_of(Xvars, _),  Xvars[J] #= 1, % o.E. liegt das erste Feld in Gebiet 1
+    solve(Xvars ++ vars(Grid)),  
+    foreach(Z in 1..N, S in 1..N)
+        if X[Z,S] = 0 then print(" |") else printf("%d|", X[Z,S]) end, 
+        if S = N then nl end
+    end.
+
+input(1,X) => % Achtunng: X muss quadratisch sein (mit Nullen auffüllen!)
+    X = {{0,_,_,_,0,0,0},
+         {_,_,_,_,0,0,0},
+         {_,_,_,_,0,0,0},
+         {0,_,0,_,0,0,0},
+         {_,_,_,_,0,0,0},
+         {_,_,_,_,0,0,0},
+         {_,_,0,_,0,0,0}}. /* 
+ |1|1|1| | | |
+1|1|4|1| | | |
+3|3|4|4| | | |
+ |3| |4| | | |
+3|3|4|4| | | |
+3|2|2|2| | | |
+2|2| |2| | | |
+CPU time 19 seconds, korrekt */
+
+input(2,X) =>
+    X = {{0,0,_,0,0,0},
+         {0,_,_,0,_,0},
+         {_,_,_,_,_,0},
+         {_,_,_,_,_,0},
+         {_,_,_,_,_,0},
+         {_,_,_,_,_,0}}. /*
+ | |1| | | |
+ |1|1| |3| |
+4|1|1|3|3| |
+4|4|1|3|3| |
+4|4|2|2|3| |
+4|2|2|2|2| |
+CPU time 13 seconds, korrekt */
+
+input(16,X) =>
+    X = {{0,_,_,0,0,0},
+         {_,_,_,_,0,0},
+         {_,_,_,_,_,0},
+         {_,_,_,_,_,0},
+         {_,_,_,_,_,0},
+         {0,0,_,_,_,0}}. /*
+ |1|1| | | |
+1|1|4|4| | |
+1|1|4|4|4| |
+3|3|2|2|4| |
+3|3|3|2|2| |
+ | |3|2|2| |
+CPU time 17 seconds, korrekt */

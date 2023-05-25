@@ -1,0 +1,56 @@
+/* Janko Erich Friedman Polyomino Addition/ Tetromino Addition
+https://erich-friedman.github.io/puzzle/polyadd/
+Dieses Programm funktioniert nur für Tetrominos! */
+import sat. 
+main(No) =>
+    input(No, NZ, NS, Typ), Fcnt = len(Typ[1]),
+    M = new_array(2,NZ,NS), M :: 1..Fcnt, % 1=empty
+    foreach(Y in 1..2, F in 2..Fcnt) 4 #= sum([(M[Y,Z,S]#=F) : Z in 1..NZ, S in 1..NS]) end,
+    % Add the shapes on the left hand side of the equal sign to make the same shape as on the right hand side of the equal sign:
+    foreach(Z in 1..NZ, S in 1..NS) 
+        M[1,Z,S] #= 1 #<=> M[2,Z,S] #= 1 % same shape
+    end,
+    % Berechne ONb, die Zahl der orthogonalen Nachbarn gleicher Farbe sowie DNb für die Existenz von diagonalen Nachbarn: 
+    ONb = new_array(2,NZ,NS), ONb :: 0..3, % Anzahl
+    DNb = new_array(2,NZ,NS), DNb :: 0..1, % hat diagonalen Nachbar
+    foreach(Y in 1..2, Z in 1..NZ, S in 1..NS)
+   		F #= M[Y,Z,S],
+   		ONb[Y,Z,S] #= sum([(M[Y,Z1,S1] #= F): {Z1,S1} in [{Z-1,S},{Z,S-1},{Z,S+1},{Z+1,S}], Z1 > 0, Z1 =< NZ, S1 > 0, S1 =< NS]),
+   		DNb[Y,Z,S] #= (sum([(M[Y,Z1,S1] #= F): {Z1,S1} in [{Z-1,S-1},{Z-1,S+1},{Z+1,S-1},{Z+1,S+1}], Z1 > 0, Z1 =< NZ, S1 > 0, S1 =< NS]) #> 0)
+    end,
+    % "O"-Tetrominos (O=1) haben in der Summe 8 orthogonale Nachbarn:
+    foreach(Y in 1..2, F in 2..Fcnt)
+        SumONb #= sum([ONb[Y,Z1,S1] * (M[Y,Z1,S1]#=F): Z1 in 1..NZ, S1 in 1..NS]),
+        SumDNb #= sum([DNb[Y,Z1,S1] * (M[Y,Z1,S1]#=F): Z1 in 1..NZ, S1 in 1..NS]),
+        SumONb :: [6,8],
+   		Typ[Y,F] #= 1      #<=> SumONb #= 8, % O=1
+   		Typ[Y,F] #= SumDNb #<=> SumONb #= 6  % I=0, L=2, T=3, S=4
+    end,
+    Vars = Typ ++ vars(M) ++ vars(ONb) ++ vars(DNb),
+    solve(Vars),
+    Code = "IOLTS",
+    foreach(Z in 1..NZ) 
+      foreach(Y in 1..2, S in 1..NS) 
+        if M[Y,Z,S] = 1 then print("  |") else printf("%c%d|", Code[1 + Typ[Y,M[Y,Z,S]]], M[Y,Z,S]-1) end, 
+        if Y = 1, S = NS then print(" = ") end
+	  end, nl
+    end. 
+
+input(0, NZ, NS, Typ) =>
+    TI=0, TO=1, TL=2, TT=3, TS=4,
+    NZ = 3, NS = 4, Typ = [[5,TI,TL], [5,TT,TT]]. /*
+I1|I1|I1|I1| = T1|T2|T2|T2|
+L2|L2|L2|  | = T1|T1|T2|  |
+L2|  |  |  | = T1|  |  |  | CPU time 0.039 seconds, korrekt */
+input(1, NZ, NS, Typ) => % Area 12, 1. Instanz
+    TI=0, TO=1, TL=2, TT=3, TS=4,
+    NZ = 3, NS = 6, Typ = [[5,TI,TI,TL], [5,TT,TT,TO]]. /*
+  |  |  |L3|L3|L3| =   |  |  |T1|O3|O3|
+  |I1|I1|I1|I1|L3| =   |T2|T1|T1|O3|O3|
+I2|I2|I2|I2|  |  | = T2|T2|T2|T1|  |  | CPU time 0.549 seconds, korrekt */
+input(2, NZ, NS, Typ) => % Area 12, 2. Instanz
+    TI=0, TO=1, TL=2, TT=3, TS=4,
+    NZ = 3, NS = 6, Typ = [[5,TI,TI,TS], [5,TI,TT,TT]]. /*
+  |  |  |  |S3|  | =   |  |  |  |T2|  |
+I2|I2|I2|I2|S3|S3| = T3|T3|T3|T2|T2|T2|
+  |I1|I1|I1|I1|S3| =   |T3|I1|I1|I1|I1| CPU time 1.014 seconds, korrekt */

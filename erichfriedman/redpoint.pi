@@ -1,0 +1,50 @@
+/* Janko Erich Friedman Red Point
+https://erich-friedman.github.io/puzzle/redpoint/ */
+import sat. 
+
+main(P) =>
+    input(P, A), NZ = len(A), NS = len(A[1]), 
+    Zs = new_list(5), Zs :: 1..NZ, % red points row
+    Ss = new_list(5), Ss :: 1..NS, % red points column
+    Pos = new_list(5), all_different(Pos), % chose five different points!
+    foreach(I in 1..5) 
+        Pos[I] #= Zs[I] * NS + Ss[I] - 1,
+        matrix_element(A, Zs[I], Ss[I], 1) % Zs[I]|Ss[I is black
+    end,
+    Dist = [], all_different(Dist), % pairwise distances of the five points
+    foreach(I in 1..4, J in I+1..5) 
+        D #= (Zs[J] - Zs[I])**2 + (Ss[J] - Ss[I])**2,
+        Dist := [D | Dist] 
+    end,
+    solve(Zs ++ Ss ++ Pos ++ Dist), 
+    M = {{0 : _ in 1..NS} : _ in 1..NZ},
+    foreach(I in 1..5) M[Zs[I], Ss[I]] := 1 end,
+    foreach(Z in 1..NZ, S in 1..NS)
+        C = cond(M[Z,S] = 1, 'X', cond(A[Z,S] = 1, '.', ' ')),
+        printf("%c|", C), if S = NS then nl end
+    end.
+
+input(0, A) =>
+    A = {{1,0,0,0,1}, 
+         {0,1,1,1,1},
+         {1,1,0,0,1},
+         {1,1,1,0,0}}. /*
+X| | | |X|
+ |.|.|.|X|
+.|X| | |.|
+X|.|.| | |
+CPU time 0.165 seconds, korrekt */
+input(18, A) =>
+    A = {{0,0,1,0,0,0}, 
+         {0,1,1,1,0,0},
+         {1,0,0,0,1,1},
+         {1,1,0,0,1,0},
+         {0,0,1,0,0,0},
+         {0,0,0,1,0,0}}. /*
+ | |.| | | |
+ |X|.|X| | |
+X| | | |.|X|
+.|.| | |.| |
+ | |.| | | |
+ | | |X| | |
+CPU time 0.084 seconds, korrekt */

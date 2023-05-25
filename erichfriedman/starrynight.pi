@@ -1,0 +1,44 @@
+/* Janko Erich Friedmann Starry Night
+https://erich-friedman.github.io/puzzle/night/ */
+import util, sat.
+main(Nr) => 
+    input(Nr, Cr, Cc), N = len(Cr),
+    M = new_array(N, N), M :: 0..3, Bl=1, Wh=2, St=3, % Black circle, White circle, Star
+    foreach(L in M.rows() ++ M.columns())
+        global_cardinality(L, $[1-1, 2-1, 3-1])
+    end,
+    foreach({Sym,L} in zip(Cr ++ Cc, M.rows() ++ M.columns()), Sym > 0)
+        Idx = new_list(3), Idx :: 1..N, % positions of the Black circle, the White circle dan the Star
+        foreach(J in 1..3) element(Idx[J], L, J) end,
+        DBl #= abs(Idx[St] - Idx[Bl]), DWh #= abs(Idx[St] - Idx[Wh]), % circle distances to the star
+        if     Sym = Bl then DBl #< DWh % A circle on the side of the grid indicates ..
+        elseif Sym = Wh then DBl #> DWh % .. the color of the circle closer to the star
+        elseif Sym = St then DBl #= DWh % A star indicates that both circles have the same distance to the star
+        end
+    end,
+    % Symbols will not touch similar symbols diagonally:
+    foreach(Z in 1..N-1, S in 1..N-1) M[Z,S] #= M[Z+1,S+1] #=> M[Z,S] #= 0 end,
+    foreach(Z in 1..N-1, S in 2..N)   M[Z,S] #= M[Z+1,S-1] #=> M[Z,S] #= 0 end,
+    solve(M), Chr = " @O*", 
+    foreach(Z in 1..N, S in 1..N)
+        printf("%c|", Chr[1+M[Z,S]]),
+        if S=N then nl end
+    end.
+
+input(0, Cr, Cc) =>
+    Bl=1, _Wh=2, St=3, % Black circle, White circle, Star
+    Cr = [0,0,0,St,0], Cc = [Bl,0,0,St,0]. /*
+ |@|*|O| |
+*|O| | |@|
+ | |@|*|O|
+@|*|O| | |
+O| | |@|*| CPU time 0.017 seconds, korrekt */
+input(16, Cr, Cc) =>
+    Bl=1, Wh=2, _St=3, % Black circle, White circle, Star
+    Cr = [Wh,Bl,Wh,Bl,Bl,Wh], Cc = [Bl,Bl,Wh,Bl,Wh,Bl]. /*
+@|O| | |*| |
+*| |@| | |O|
+ | |O|*| |@|
+ |*| |@|O| |
+O|@| | | |*|
+ | |*|O|@| | CPU time 0.118 seconds, korrekt */

@@ -1,0 +1,36 @@
+/* Janko Erich Friedman Straight Mazes - using hcp(Vs,Es)
+https://erich-friedman.github.io/puzzle/straight/ */
+import sat. 
+main ?=>	
+    A = {{2,_,_,_,_},
+         {2,_,_,3,_}, 
+         {_,4,_,4,_}, 
+         {_,_,_,_,_}, 
+         {_,_,_,_,_}}, N = len(A), Start = (N,1), Finish = (1,N), 
+    Vs = [{(Z,S), _} : Z in 1..N, S in 1..N], % mögliche Vertices
+    Es = [{Finish, Start, 1}] ++ [{(Z,S), (Z1,S1), _} : Z in 1..N, S in 1..N, Z1 in 1..N, S1 in 1..N, abs(Z1 - Z) + abs(S1 - S) = 1 ], % mögliche Kanten
+    hcp(Vs, Es), % die gerichteten Kanten in Es formen einen Hamilton-Cycle auf Vs
+    EMap = new_map(), foreach ({(Z1,S1),(Z2,S2),B} in Es) EMap.put({Z1,S1,Z2,S2}, B) end,
+    Str8 = new_array(N,N), Str8 :: 0..1, % straight segment of the path
+    % The numbers in some of the squares indicate how many times the path has a straight segment in that square or the four touching squares:
+    foreach(Z in 1..N, S in 1..N)
+        Str8[Z,S] #= ( (EMap.get({Z,S-1, Z,S} ,0) #= 1 #/\ EMap.get({Z,S, Z,S+1} ,0) #= 1)    % > >
+                   #\/ (EMap.get({Z,S+1, Z,S} ,0) #= 1 #/\ EMap.get({Z,S, Z,S-1} ,0) #= 1)    % < <
+                   #\/ (EMap.get({Z-1,S, Z,S} ,0) #= 1 #/\ EMap.get({Z,S, Z+1,S} ,0) #= 1)    % v v
+                   #\/ (EMap.get({Z+1,S, Z,S} ,0) #= 1 #/\ EMap.get({Z,S, Z-1,S} ,0) #= 1) ), % ^ ^
+        A[Z,S] #= sum([Str8[Z1,S1] : {Z1,S1} in [{Z-1,S}, {Z,S-1}, {Z,S}, {Z,S+1}, {Z+1,S}], 1=<Z1, Z1=<N, 1=<S1, S1=<N])
+    end,  
+    solve(vars(Vs) ++ vars(Es) ++ vars(Str8)),
+    foreach(Z in 1..N, S in 1..N) 
+        C = cond((Z,S)=(1,N), 'F', ' '),
+        if     EMap.get({Z,S, Z-1,S} ,0) = 1 then C := '^' elseif EMap.get({Z,S, Z+1,S} ,0) = 1 then C := 'v'
+        elseif EMap.get({Z,S, Z,S-1} ,0) = 1 then C := '<' elseif EMap.get({Z,S, Z,S+1} ,0) = 1 then C := '>' 
+        end,
+        printf("%c|", C), if S = N then nl end
+    end, nl, fail. /*
+>|>|>|v|F|
+^|v|<|v|^|
+^|v|^|v|^|
+^|v|^|<|^|
+^|>|>|>|^|
+CPU time 0.044 seconds, no more solutions, korrekt */

@@ -1,0 +1,59 @@
+/* Janko Erich Friedman Zig-Zag with not-intersect constrain (see lines 24f)
+https://erich-friedman.github.io/puzzle/zigzag/ */
+import sat, util.
+
+% macro
+ccw(Az,As,Bz,Bs,Cz,Cs)=( Cs - As )*( Bz - Az ) #> ( Bs - As )*( Cz - Az ).
+
+main(No) ?=>
+input(No, C), NZ = len(C), NS = len(C[1]), Start = 0, Finish = (NZ+1,1),
+    foreach(Z in 1..NZ, S in 1..NS, C[Z,S] = s) Start := (Z,S) end,
+    Step = new_array(NZ,NS), Step :: 0..NZ*NS,
+    foreach(Z in 1..NZ, S in 1..NS)
+        if C[Z,S] = 0 then Step[Z,S] #= 0
+        elseif C[Z,S] = s then Step[Z,S] #= 1
+        elseif C[Z,S] = 1 then Step[Z,S] #> 1
+        end
+    end,
+    Vs = [{(Z,S),1} : Z in 1..NZ, S in 1..NS, C[Z,S] != 0] ++ [{Finish,1}], % ++ dummy vertex
+    Es = [{(Z,S),(Z1,S1),_} : {(Z,S),1} in Vs, {(Z1,S1),1} in Vs, (Z1,S1) != (Z,S), Z1 =< NZ, Z =< NZ,
+                                S != S1, Z != Z1, Z + S != Z1 + S1, Z - S != Z1 - S1]
+      ++ [{(Z,S),Finish,_} : Z in 1..NZ, S in 1..NS, C[Z,S] != 0], % edges to dummy Finish
+    foreach({(Z1,S1),(Z2,S2),B} in Es, Z1 =< NZ, Z2 =< NZ) B #=> Step[Z2,S2] #= Step[Z1,S1] + 1 end,
+    % The path does not cross itself:
+    foreach({(Az,As),(Bz,Bs),B1} in Es, {(Cz,Cs),(Dz,Ds),B2} in Es, Az =< NZ, Bz =< NZ, Cz =< NZ, Dz =< NZ, % normal edge
+        (Az,As) != (Cz,Cs), (Az,As) != (Dz,Ds), (Bz,Bs) != (Cz,Cs), (Bz,Bs) != (Dz,Ds))
+        (B1 #= 1 #/\ B2 #= 1) #=>
+            % the segments do not cross itself (see https://bryceboe.com/2006/10/23/line-segment-intersection-algorithm/)
+            (( (Ds-As)*(Cz-Az)#>(Cs-As)*(Dz-Az) #<=> (Ds-Bs)*(Cz-Bz)#>(Cs-Bs)*(Dz-Bz) ) #\/ ( (Cs-As)*(Bz-Az)#>(Bs-As)*(Cz-Az) #<=> (Ds-As)*(Bz-Az)#>(Bs-As)*(Dz-Az) ))
+    end,
+    path_d(Vs, Es, Start, Finish),
+    solve(vars(Vs) ++ vars(Es) ++ vars(Step)),
+    foreach(Z in 1..NZ, S in 1..NS)
+		if Step[Z,S] = 0 then print(" |") else printf("%2d|", Step[Z,S]) end,
+	 if S = NS then nl end
+    end.
+
+input(0, C) =>
+    C = {{0,0,0,0,1,0}, {1,0,0,1,0,0}, {0,0,0,0,1,1}, {0,1,0,0,0,1}, {1,0,0,0,0,0}, {0,0,s,0,0,0}}. /*
+  | | | | 7| |
+ 6| | | 9| | |
+  | | | | 4| 8|
+  | 5| | | | 2|
+ 3| | | | | |
+  | | 1| | | | korrekt */
+input(15, C) =>
+    C = {{0,1,1,0,1,0,0},
+         {0,0,1,0,0,0,1},
+         {s,0,0,0,0,0,0},
+         {0,0,0,0,0,0,1},
+         {0,0,0,1,0,0,0},
+         {1,0,0,1,0,1,0},
+         {0,0,1,0,0,0,0}}. /*
+  | 2|10| |12| | |
+  | | 8| | | |11|
+ 1| | | | | | |
+  | | | | | | 6|
+  | | | 9| | | |
+ 3| | | 7| | 5| |
+  | | 4| | | | | sieht gut aus */

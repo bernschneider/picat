@@ -1,0 +1,47 @@
+/* Janko Erich Friedman Slow Turn Puzzles - using hcp(Vs,Es)
+https://erich-friedman.github.io/puzzle/slow/ */
+import sat. 
+main ?=>
+    R=1, G=2, % Green Red
+    A = {{0,0,0,0,0,0},
+         {0,0,0,0,0,0}, 
+         {0,0,0,0,0,0}, 
+         {G,G,0,0,R,0}, 
+         {0,0,0,0,0,0}, 
+         {0,0,0,0,0,0}}, N = len(A), Z0 = 4, S0 = 1,        % starting from a green field ..
+    No = new_array(N,N), No :: 0..N*N, No[Z0,S0] #= 1,      % .. numbering the vertices in the path 
+    foreach(Z in 1..N, S in 1..N, A[Z,S] > 0) (No[Z,S] #> 0) #= A[Z,S] - 1 end,
+    Vs = [{(Z,S), _} : Z in 1..N, S in 1..N, A[Z,S] != R],  % possible vertices
+    foreach({(Z,S), B} in Vs) B #= 1 #<=> No[Z,S] #> 0 end, % breaking symmetry
+    Es = [{(Z,S), (Z1,S1), _} : {(Z,S),_} in Vs, {(Z1,S1),_} in Vs, (Z,S) != (Z1,S1), abs(Z1 - Z) =< 1, abs(S1 - S) =< 1],
+    hcp(Vs, Es), % die gerichteten Kanten in Es formen einen Hamilton-Cycle auf Vs
+    foreach({(Z1,S1), (Z2,S2), B} in Es)                    % numbering the vertices
+        if (Z2,S2) != (Z0,S0) then B #= 1 #=> No[Z2,S2] #= No[Z1,S1] + 1 end
+    end,
+    % Only shallow -45, 0 or +45 degree turns are allowed; in other words: no turns of -90 or less or +90 or more:
+    foreach({(Z1,S1), (Z2,S2), B1} in Es, {(Z2,S2), (Z3,S3), B2} in Es)
+        if (Z1 = Z2, S3 - S2 != S2 - S1); % waagrecht: 2 -> 3 muss in die gleiche Richtung gehen, andernfalls keine 2 Edges!
+           (S1 = S2, Z3 - Z2 != Z2 - Z1); % senkrecht: 2 -> 3 muss in die gleiche Richtung gehen, andernfalls keine 2 Edges!
+           % diagonal: Z1 -> Z3 und S1 -> S3 gehen jeweils 1-2, zusammen mindestens 3 Schritte, andernfalls keine 2 Edges!
+           (abs(Z2 - Z1) = 1, abs(S2 - S1) = 1, abs(Z3 - Z1) + abs(S3 - S1) < 3) 
+        then B1 + B2 #< 2 end % .. keine 2 Edges
+    end,
+    solve(vars(No) ++ vars(Vs) ++ vars(Es)), Chr = " RG",
+    foreach(Z in 1..N, S in 1..N) 
+        if No[Z,S] = 0 then printf("  %c|", Chr[1+A[Z,S]]) else printf("%2d%c|", No[Z,S], Chr[1+A[Z,S]]) end,
+        if S = N then nl end
+    end, nl, fail.  /* 
+   |16 |17 | 4 | 5 |   |
+15 |   | 3 |18 |   | 6 |
+14 | 2 |   |19 |   | 7 |
+ 1G|13G|   |20 |  R| 8 |
+24 |   |12 |21 |   | 9 |
+   |23 |22 |11 |10 |   |
+
+   |10 | 9 |22 |21 |   |
+11 |   |23 | 8 |   |20 |
+12 |24 |   | 7 |   |19 |
+ 1G|13G|   | 6 |  R|18 |
+ 2 |   |14 | 5 |   |17 |
+   | 3 | 4 |15 |16 |   |
+CPU time 0.492 seconds, korrekt */

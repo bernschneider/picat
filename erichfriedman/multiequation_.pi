@@ -1,0 +1,67 @@
+/* Janko Erich Friedman Multi-Equation
+https://erich-friedman.github.io/puzzle/multi/ */
+import util.
+
+equation(L,LT,RT) =>
+   split(L,LL,RL),              % decompose the list L
+   term(LL,LT),                 % construct the left term
+   term(RL,RT),                 % construct the right term
+   LT =:= RT.                   % evaluate and compare the terms
+
+% term(L,T): L is the list of numbers which are the leaves in
+%    the arithmetic term T - from left to right.
+
+term([X],T) => T = X.           % a number is a term in itself
+term(L,T) =>                    % general case: binary term
+   split(L,LL,RL),              % decompose the list L
+   term(LL,LT),                 % construct the left term
+   term(RL,RT),                 % construct the right term
+   binterm(LT,RT,T).            % construct combined binary term
+
+% binterm(LT,RT,T): T is a combined binary term constructed from
+%    left-hand term LT and right-hand term RT
+
+binterm(LT,RT,T) ?=> T = $(LT+RT).
+% binterm(LT,RT,T) ?=> T = $(LT-RT).
+binterm(LT,RT,T) ?=> T = $(LT*RT).
+% binterm(LT,RT,T), RT !== 0 => T = $(LT/RT).
+binterm(LT,RT,T) => not LT =:= 0, T = $(10*LT+RT).
+
+% split(L,L1,L2): split the list L into non-empty parts L1 and L2
+% such that their concatenation is L
+
+split(L,L1,L2) => append(L1,L2,L), L1 = [_|_], L2 = [_|_].
+
+% test_equation(L): find all solutions to the problem as given by the list of
+%    numbers L, and print them out, one solution per line.
+
+test_equation(L) =>
+   permutation(L, LP), 
+   split(LP,LL,LR),
+   term(LL,LT),                 % construct the left term
+   term(LR,RT),                 % construct the right term
+   LT =:= RT,                   % evaluate and compare the terms
+   printf("%w = %w\n",LT,RT),
+   fail.
+test_equation(_L) => true.
+
+test_equations(L) ?=>
+   permutation(L, LP), 
+   split(LP,L1,L23), split(L23, L2, L3),
+   split(L1, L1L, L1R), term(L1L,T1L), term(L1R,T1R), T1L =:= T1R, % evaluate and compare the terms
+   split(L2, L2L, L2R), term(L2L,T2L), term(L2R,T2R), T2L =:= T2R, % evaluate and compare the terms
+   split(L3, L3L, L3R), term(L3L,T3L), term(L3R,T3R), T3L =:= T3R, % evaluate and compare the terms
+   printf("%w = %w, %w = %w, %w = %w\n",T1L, T1R, T2L, T2R, T3L, T3R), fail.
+
+% Ergänzung PB für den Fall, dass RT als Zahl vorgegeben ist, aber nicht die Reihenfolge der Ziffern
+% Example: test_term([4,10,5,7,3],LT,2) liefert u.a. LT = 4 + 10 / (5 - (7 + 3))
+% But      test_term([6,1,3,4],LT,24) doesn´t work :-(
+test_term(L,LT,R) =>
+   permutation(L, Permut),     % ändere die reihenfolge der Ziffern
+   term(Permut,LT),            % construct the left term
+   LT =:= R.                   % evaluate and compare the terms
+
+main => 
+    test_equations([0, 1, 1, 1, 2, 3, 4, 7, 7, 9]).
+    % 0 + 1 = 1, 1 + 2 = 3, 10 * 4 + 9 = 7 * 7 CPU time 0.83 seconds, correct
+    % test_equations([1, 2, 3, 4, 5, 5, 6, 8, 9, 9]).

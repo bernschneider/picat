@@ -1,0 +1,34 @@
+/* Janko Erich Friedman Multi-Equation
+https://erich-friedman.github.io/puzzle/multi/ */
+import util.
+
+zahl([X],T)    => T = X.           % a digit is a term in itself
+zahl([Xz,X],T), Xz != 0 ?=> T = 10 * Xz + X. % a number is a term in itself
+
+% term(L,T): L is the list of numbers which are the leaves in the arithmetic term T - from left to right.
+term(Op,L,T) =>                 % general case: binary term
+   split(L,LL,RL),              % decompose the list L
+   zahl(LL,LT),                 % construct the left term
+   zahl(RL,RT),                 % construct the right term
+   binterm(Op,LT,RT,T).         % construct combined binary term
+
+% binterm(LT,RT,T): T is a combined binary term constructed from left-hand term LT and right-hand term RT
+binterm(1,LT,RT,T) => T = $(LT+RT).
+binterm(2,LT,RT,T) => T = $(LT*RT).
+
+% split(L,L1,L2): split the list L into non-empty parts L1 and L2 such that their concatenation is L
+split(L,L1,L2) => append(L1,L2,L), L1 = [_|_], L2 = [_|_].
+
+test_equations(L,Ops) => % use the digits in L to create 3 equations using the operators in Ops
+   permutation(L, LP), 
+   split(LP,L1,L23), split(L23, L2, L3),
+   split(L1, L1L, L1R), term(Ops[1],L1L,T1L), zahl(L1R,T1R), T1L =:= T1R, % equation 1
+   split(L2, L2L, L2R), term(Ops[2],L2L,T2L), zahl(L2R,T2R), T2L =:= T2R, % equation 2 
+   split(L3, L3L, L3R), term(Ops[3],L3L,T3L), zahl(L3R,T3R), T3L =:= T3R, % equation 3
+   printf("%w = %w, %w = %w, %w = %w\n",T1L, T1R, T2L, T2R, T3L, T3R). % , fail.
+
+% v- operators +=1, *=2:
+main(0) => test_equations([0, 1, 1, 1, 2, 3, 4, 7, 7, 9], [1,1,2]). % 0 + 1 = 1, 1 + 2 = 3, 10 * 4 + 9 = 7 * 7 CPU time 0.83 seconds, correct
+main(a) => test_equations([1, 2, 3, 4, 5, 5, 6, 8, 9, 9], [1,2,2]). % 1 + 8 = 9, 2 * 3 = 6, 5 * 9 = 45
+main(b) => test_equations([1, 1, 2, 2, 2, 4, 4, 5, 7, 7], [1,1,2]). % 2 + 5 = 7, 4 + 7 = 11, 2 * 2 = 4
+main(c) => test_equations([1, 1, 3, 4, 5, 5, 6, 6, 7, 8], [1,1,2]). %

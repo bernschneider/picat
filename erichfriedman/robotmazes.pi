@@ -1,0 +1,71 @@
+/* Janko Erich Friedman Robot Mazes
+https://erich-friedman.github.io/puzzle/robot/ */
+import sat. 
+
+main(P) =>
+    input(P, V, H, Nmoves), N = len(V), Max = (Nmoves+1)*(Nmoves+1), % maximum number of steps
+    MR=1, ML=2, MD=3, MU=4, Chr = "RLDU", % moving directions R_ight, L_eft, D_own, U_p
+    Moves = new_list(Nmoves), Moves :: 1..4, % these moves will be repeated until we reach the goal
+    Rs = new_list(Max), Rs :: 1..N, Rs[1] #= N, % row for each step
+    Cs = new_list(Max), Cs :: 1..N, Cs[1] #= 1, % column for each step
+    IG :: 2*(N-1)..Max, 
+    element(IG, Rs, 1), element(IG, Cs, N), % goal is reached at step IG!
+    IM = -1,
+    foreach(J in 1..Max-1) % for each step:
+        abs(Cs[J] - Cs[J+1]) + abs(Rs[J] - Rs[J+1]) #=< 1, % one orthogonal step or stay
+        IM := (IM + 1) mod Nmoves, Move #= Moves[1+IM], % IM = index of this move 0..3
+        % Is there a wall in the four directions? Compute WR, WL, WD, WU:
+        ColR #= Cs[J] + 1, matrix_element(V, Rs[J], ColR,  WR), % wall to the Right
+                           matrix_element(V, Rs[J], Cs[J], WL), % wall to the Left
+        RowD #= Rs[J] + 1, matrix_element(H, RowD,  Cs[J], WD), % wall below (Down)
+                           matrix_element(H, Rs[J], Cs[J], WU), % wall above (Up)
+        Cs[J+1] #= Cs[J] + 1 #=> (WR #= 0 #/\ Move #= MR), % no wall to the Right, move Right
+        Cs[J+1] #= Cs[J] - 1 #=> (WL #= 0 #/\ Move #= ML), % no wall to the Left, move Left
+        Rs[J+1] #= Rs[J] + 1 #=> (WD #= 0 #/\ Move #= MD), % no wall below, move Down
+        Rs[J+1] #= Rs[J] - 1 #=> (WU #= 0 #/\ Move #= MU), % no wall above, move Up
+        (Cs[J+1] #= Cs[J] #/\ Rs[J+1] #= Rs[J]) #=> % stay, because there is a wall in the moving direction:
+            ((WR #= 1 #/\ Move #= MR) #\/ (WL #= 1 #/\ Move #= ML) #\/ (WD #= 1 #/\ Move #= MD) #\/ (WU #= 1 #/\ Move #= MU))
+    end,
+    solve([$min(IG)], Moves ++ Rs ++ Cs),
+    println([Chr[I] : I in Moves]),
+    M = {{0 : C in 1..N} : R in 1..N}, Dir = {{' ' : C in 1..N} : R in 1..N},
+    foreach(J in 1..IG)                         M[Rs[J],Cs[J]] := J end, % last entered: step number
+    foreach(J in 1..IG, Dir[Rs[J],Cs[J]] = ' ') Dir[Rs[J],Cs[J]] := Chr[Moves[1+(J-1)mod 4]] end, % first entered: direction
+    foreach(R in 1..N, C in 1..N)
+        if M[R,C] > 0 then printf("%2d%c|", M[R,C], Dir[R,C]) else print("   |") end,
+        if C = N then nl end
+    end,
+    println(rs=Rs[1..IG]), println(cs=Cs[1..IG]).
+
+input(0, V, H, Nmoves) =>
+    V = {{1,0,1,0,1}, {1,0,1,0,1}, {1,1,0,0,1}, {1,0,0,0,1}}, % left and right border + vertical walls
+    H = {{1,1,1,1}, {0,0,0,1}, {0,0,0,1}, {0,0,0,0}, {1,1,1,1}}, % top and bottom border + horizontal walls
+    Nmoves = 4. /* RRLU
+   |   |13R|14R| first entered: direction
+   |   |12R|11R| last entered: step
+   | 5R| 8R| 7L|
+ 1R| 4R| 3L|   |
+rs = [4,4,4,4,3,3,3,3,2,2,2,2,1,1]
+cs = [1,2,3,2,2,3,4,3,3,4,4,3,3,4] CPU time 0.337 seconds, correct */
+input(1, V, H, Nmoves) =>
+    V = {{1,1,0,0,1,1}, {1,0,0,1,0,1}, {1,0,1,0,0,1}, {1,0,0,0,0,1}, {1,0,0,0,0,1}}, 
+    H = {{1,1,1,1,1}, {0,0,1,0,0}, {0,0,0,0,1}, {0,0,1,0,0}, {0,0,0,0,0}, {1,1,1,1,1}}, 
+    Nmoves = 4. /* UUDR
+   |11D|   |19D|22U|
+   |12D|15U|20U|21U|
+ 3D| 9U|16R|17U|   |
+ 4U| 5U|   |   |   |
+ 1U|   |   |   |   |
+rs = [5,4,3,4,4,3,2,3,3,2,1,2,2,2,2,3,3,2,1,2,2,1]
+cs = [1,1,1,1,2,2,2,2,2,2,2,2,3,3,3,3,4,4,4,4,5,5] CPU time 1.248 seconds, correct */
+input(13, V, H, Nmoves) =>
+    V = {{1,1,1,1,0,1}, {1,1,1,1,1,1}, {1,0,0,1,0,1}, {1,0,0,0,0,1}, {1,0,0,0,0,1}}, 
+    H = {{1,1,1,1,1}, {0,0,0,0,1}, {0,0,0,0,0}, {1,0,0,1,0}, {0,0,0,0,0}, {1,1,1,1,1}}, 
+    Nmoves = 6. /* RRULDU
+   |   |   |25R|26R| first entered: direction
+   |   |   |24U|   | last entered: step
+   |   |   |18R|16L|
+   | 7R|13L|14R|15U|
+ 1R| 6R|12U|   |   |
+rs = [5,5,5,4,4,5,4,4,4,4,4,5,4,4,4,3,3,3,2,2,2,1,1,2,1,1]
+cs = [1,2,3,3,2,2,2,3,4,4,3,3,3,4,5,5,4,4,4,4,4,4,4,4,4,5] CPU time 2.164 seconds, correct*/

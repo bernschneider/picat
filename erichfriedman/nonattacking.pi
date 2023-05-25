@@ -1,0 +1,86 @@
+/* Janko Erich Friedman Non-Attacking Mazes
+https://erich-friedman.github.io/puzzle/nonattack/ */
+import planner.
+notattacks(1,Z,S,Z1,S1) => (abs(Z1 - Z) > 1; abs(S1 - S) > 1). % king
+notattacks(2,Z,S,Z1,S1) => notattacks(3,Z,S,Z1,S1), notattacks(4,Z,S,Z1,S1).
+notattacks(3,Z,S,Z1,S1) => (Z1 != Z; S1 != S). % rook
+notattacks(4,Z,S,Z1,S1) => Z1 + S1 != Z + S, Z1 - S1 != Z - S. % bishop
+notattacks(5,Z,S,Z1,S1) => ADZ = abs(Z1 - Z), ADS = abs(S1 - S), (ADZ != 1; ADS != 2), (ADZ != 2; ADS != 1). % knight/Pferd
+
+main ?=> % 1 king, 2 queen, 3 rook, 4 bishop, 5 knight/Pferd
+    % State0 = {{0,0,0,1}, {0,0,0,0}, {4,0,4,4}}, % Example (8 moves)
+    % State0 = {{0,0,0,0}, {0,0,0,0}, {0,4,5,5}},  % instance 1 (10 moves)
+    State0 = {{2,0,0,0,0}, {0,0,1,0,0}, {0,0,0,0,4}, {0,0,4,0,0}}, % instannce 12 (21 moves) 
+    plan(State0, 21, Plan), % Achtung: number of moves must be updated too!
+    foreach(Mv in Plan) printf("%w%n", Mv) end, nl, fail. 
+    
+final(State) => 
+    % State = {{4,0,4,4}, {0,0,0,0}, {0,0,0,1}}.  % Example 
+	% State =  {{5,0,0,0}, {0,0,0,0}, {0,0,5,4}}. % instance 1 
+	State =  {{0,0,2,0,0}, {0,0,0,0,1}, {0,0,0,0,0}, {0,4,0,0,4}}. %  instance 12 
+
+action(State0, State1, Action, Cost) ?=> 
+    NZ = len(State0), NS = len(State0[1]), State1 = copy_term(State0), 
+    between(1, NZ, Z),  between(1, NS, S), 
+    between(1, NZ, Z1), between(1, NS, S1), (Z1,S1) != (Z,S), State0[Z1,S1] = 0, % target is free
+    F = State0[Z,S], F > 0, State1[Z,S] := 0, State1[Z1,S1] := F, % move F from Z|S to Z1|S1
+    DZ = Z1 - Z, ADZ = abs(DZ), 
+    DS = S1 - S, ADS = abs(DS),
+    % This move is valid:
+        if F = 1 then abs(Z1 - Z) =< 1, abs(S1 - S) =< 1                 % king
+    elseif F = 2 then (Z1 = Z; S1 = S; Z1 - S1 = Z - S; Z1 + S1 = Z + S) % queen
+    elseif F = 3 then (Z1 = Z; S1 = S)                                   % rook
+    elseif F = 4 then (Z1 - S1 = Z - S; Z1 + S1 = Z + S)                 % bishop
+    elseif F = 5 then ADZ =< 2, ADS =< 2, ADZ + ADS = 3                  % knight
+    end,
+    % non attack:
+    foreach(Z2 in 1..NZ, S2 in 1..NS, (Z2,S2) != (Z1,S1), State1[Z2,S2] > 0)
+        notattacks(State1[Z2,S2], Z2,S2, Z1,S1), % new position is not attacked from Z2|S2
+        notattacks(State1[Z1,S1], Z1,S1, Z2,S2)  % F is not attacking Z2|S2
+    end,
+    % For queen, rook, bishop all squares between Z|S and Z1|S1 mus be empty:
+    Steps = max(ADZ, ADS), SDZ = sign(DZ), SDS = sign(DS), 
+    if 2 =< F, F =< 4 then foreach(I in 1..Steps-1) State1[Z + I * SDZ, S + I * SDS] = 0 end end,   
+    Action = [F,(Z,S),(Z1,S1)], Cost = 1.
+/* Example:
+[4,(3,3),(1,1)]
+[4,(3,4),(1,2)]
+[4,(1,2),(2,1)]
+[1,(1,4),(2,3)]
+[1,(2,3),(3,4)]
+[4,(2,1),(3,2)]
+[4,(3,1),(1,3)]
+[4,(3,2),(1,4)] no more solutions, sieht gut aus
+Instance 1:
+[5,(3,3),(1,2)]
+[5,(1,2),(3,1)]
+[4,(3,2),(2,1)]
+[5,(3,1),(2,3)]
+[5,(2,3),(1,1)]
+[5,(3,4),(2,2)]
+[4,(2,1),(1,2)]
+[5,(2,2),(1,4)]
+[4,(1,2),(3,4)]
+[5,(1,4),(3,3)] no more solutions, korrekt 
+Instance 12:
+[2,(1,1),(1,5)]
+[2,(1,5),(4,2)]
+[1,(2,3),(1,2)]
+[1,(1,2),(1,1)]
+[1,(1,1),(2,2)]
+[2,(4,2),(1,5)]
+[2,(1,5),(1,4)]
+[2,(1,4),(4,1)]
+[1,(2,2),(1,1)]
+[1,(1,1),(1,2)]
+[4,(3,5),(2,4)]
+[1,(1,2),(1,1)]
+[1,(1,1),(2,2)]
+[4,(2,4),(4,2)]
+[1,(2,2),(1,3)]
+[2,(4,1),(1,1)]
+[1,(1,3),(1,4)]
+[4,(4,3),(3,4)]
+[4,(3,4),(4,5)]
+[1,(1,4),(2,5)]
+[2,(1,1),(1,3)] CPU time 2.75 seconds, no more solutions, sieht gut aus! */

@@ -1,0 +1,26 @@
+/* Janko Erich Friedman Sum/ Product
+https://erich-friedman.github.io/puzzle/sumproduct/ */
+import util, cp.
+
+main(P) =>
+    input(P, M), NZ = len(M), NS = len(M[1]), M :: 1..100,
+    % each row has the same sum and each column has the same product:
+    Sum :: 1..300, Prod :: 1..100**NZ, 
+    foreach(Row in M.rows())    sum(Row)  #= Sum end,
+    foreach(Col in M.columns()) prod(Col) #= Prod end,
+    solve([Sum, Prod|vars(M)]),
+    foreach(Z in 1..NZ, S in 1..NS)
+        printf("%2d|", M[Z,S]), 
+        if S = NS then nl end
+    end.
+
+input(1,M) => 
+    M = {{4,_,_},
+         {_,5,6}}. /* 
+ 4|12|10|
+15| 5| 6|, correct */
+input(13,M) => 
+    M = {{4,7,_},
+         {_,_,5},
+         {_,_,8}}. /* 
+*/

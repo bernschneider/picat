@@ -1,0 +1,41 @@
+/* Janko Erich Friedman Slow Turn Puzzles (last)
+https://erich-friedman.github.io/puzzle/slow/ */
+import sat. 
+main ?=>
+    R=1, G=2, % Green Red
+    A = {{0,0,0,0,0, R,0,0,0,0},
+         {0,0,0,G,R, 0,R,0,0,0}, 
+         {0,0,G,0,0, 0,0,0,0,G}, 
+         {0,0,0,R,0, 0,0,0,0,0}, 
+         {0,0,0,0,0, 0,0,0,0,R}, 
+         {0,0,0,0,0, R,0,0,0,0}}, NZ = len(A), NS = len(A[1]),
+    Z0 = 2, S0 = 4,   % starting from a green field ..
+    No = new_array(NZ,NS), No :: 0..NZ*NS, No[Z0,S0] #= 1, % .. numbering the vertices in the path 
+    foreach(Z in 1..NZ, S in 1..NS, A[Z,S] > 0) (No[Z,S] #> 0) #= A[Z,S] - 1 end, % Red = out of, Green = on path
+    Vs = [{(Z,S), _} : Z in 1..NZ, S in 1..NS, A[Z,S] != R], % possible vertices
+    foreach({(Z,S), B} in Vs) B #= 1 #<=> No[Z,S] #> 0 end, % breaking symmetry
+    Es = [{(Z,S), (Z1,S1), _} : {(Z,S),_} in Vs, {(Z1,S1),_} in Vs, (Z,S) != (Z1,S1), abs(Z1 - Z) =< 1, abs(S1 - S) =< 1],
+    hcp(Vs, Es), % die gerichteten Kanten in Es formen einen Hamilton-Cycle auf Vs
+    foreach({(Z1,S1), (Z2,S2), B} in Es) % numbering the vertices
+        if (Z2,S2) != (Z0,S0) then B #= 1 #=> No[Z2,S2] #= No[Z1,S1] + 1 end
+    end,
+    % Only shallow -45, 0 or +45 degree turns are allowed; in other words: no turns of -90 or less or +90 or more:
+    foreach({(Z1,S1), (Z2,S2), B1} in Es, {(Z2,S2), (Z3,S3), B2} in Es)
+        if (Z1 = Z2, S3 - S2 != S2 - S1); % waagrecht: 2 -> 3 muss in die gleiche Richtung gehen, andernfalls keine 2 Edges!
+           (S1 = S2, Z3 - Z2 != Z2 - Z1); % senkrecht: 2 -> 3 muss in die gleiche Richtung gehen, andernfalls keine 2 Edges!
+           % diagonal: Z1 -> Z3 und S1 -> S3 gehen jeweils 1-2, zusammen mindestens 3 Schritte, andernfalls keine 2 Edges!
+           (abs(Z2 - Z1) = 1, abs(S2 - S1) = 1, abs(Z3 - Z1) + abs(S3 - S1) < 3) 
+        then B1 + B2 #< 2 end % .. keine 2 Edges
+    end,
+    solve(vars(No) ++ vars(Vs) ++ vars(Es)), Chr = " RG",
+    foreach(Z in 1..NZ, S in 1..NS) 
+        if No[Z,S] = 0 then printf("  %c|", Chr[1+A[Z,S]]) else printf("%2d%c|", No[Z,S], Chr[1+A[Z,S]]) end,
+        if S = NS then nl end
+    end, nl, fail.  /* 
+   |32 |33 |20 |21 |  R|   |   |   |   |
+31 |   |19 | 1G|  R|22 |  R|10 | 9 |   |
+30 |   |18G|   | 2 |23 |11 |   |   | 8G|
+29 |   |17 |  R|24 | 3 |12 |   |   | 7 |
+28 |   |16 |25 |   |13 | 4 | 5 | 6 |  R|
+   |27 |26 |15 |14 |  R|   |   |   |   |
+CPU time 1.044 seconds, korrekt */

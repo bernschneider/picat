@@ -1,0 +1,45 @@
+/* Janko Erich Friedman Multi-Equation
+https://erich-friedman.github.io/puzzle/multi/ */
+import util.
+
+zahl([X],T)    => T = X.           % a digit is a term in itself
+zahl([Xz,X],T), Xz != 0 ?=> T = 10 * Xz + X. % a number is a term in itself
+
+% term(L,T): L is the list of numbers which are the leaves in the arithmetic term T - from left to right.
+term(Op,L,T) =>                 % general case: binary term
+   split(L,LL,RL),              % decompose the list L
+   zahl(LL,LT),                 % construct the left term
+   zahl(RL,RT),                 % construct the right term
+   binterm(Op,LT,RT,T).         % construct combined binary term
+
+% binterm(LT,RT,T): T is a combined binary term constructed from left-hand term LT and right-hand term RT
+binterm(1,LT,RT,T) => T = $(LT+RT).
+binterm(2,LT,RT,T) => T = $(LT*RT).
+
+% split(L,L1,L2): split the list L into non-empty parts L1 and L2 such that their concatenation is L
+split(L,L1,L2) => append(L1,L2,L), L1 = [_|_], L2 = [_|_].
+
+test_equations_(L,Ops, Drop) => % use the digits in L to create 3 equations using the operators in Ops
+   permutation(L, LP0), 
+   LP = cond(Drop, drop(LP0,1), LP0),
+   split(LP,L1,L23), split(L23, L2, L3),
+   split(L1, L1L, L1R), term(Ops[1],L1L,T1L), zahl(L1R,T1R), T1L =:= T1R, % equation 1
+   split(L2, L2L, L2R), term(Ops[2],L2L,T2L), zahl(L2R,T2R), T2L =:= T2R, % equation 2 
+   split(L3, L3L, L3R), term(Ops[3],L3L,T3L), zahl(L3R,T3R), T3L =:= T3R, % equation 3
+   if Drop then printf("drop %d, ", LP0[1]) end,
+   printf("%w = %w, %w = %w, %w = %w\n",T1L, T1R, T2L, T2R, T3L, T3R).
+
+test_equations(L,Ops) =>
+    test_equations_(L,Ops,false),
+    test_equations_(L,Ops,true).
+
+% v- operators +=1, *=2:
+main(0) => test_equations([0, 1, 1, 1, 2, 3, 4, 7, 7, 9], [1,1,2]). 
+% 0 + 1 = 1, 1 + 2 = 3, 10 * 4 + 9 = 7 * 7, ddrop 0, 2 + 7 = 9, 3 + 4 = 7, 1 * 1 = 1 CPU time 20.291 seconds.
+main(a) => test_equations([1, 2, 3, 4, 5, 5, 6, 8, 9, 9], [1,2,2]). 
+% 1 + 8 = 9, 2 * 3 = 6, 5 * 9 = 45, drop 9, 3 + 6 = 9, 1 * 5 = 5, 2 * 4 = 8 CPU time 422.747 seconds 
+main(b) => test_equations([1, 1, 2, 2, 2, 4, 4, 5, 7, 7], [1,1,2]). 
+% 2 + 5 = 7, 4 + 7 = 11, 2 * 2 = 4, drop 2, 1 + 4 = 5, 2 + 2 = 4, 1 * 7 = 7 CPU time 273.291 seconds
+main(c) => test_equations([1, 1, 3, 4, 5, 5, 6, 6, 7, 8], [1,1,2]). 
+% 1 + 3 = 4, 1 + 5 = 6, 7 * 8 = 56, drop 7, 1 + 4 = 5, 3 + 5 = 8, 1 * 6 = 6 CPU time 365.277 seconds
+main(n) => test_equations([0, 1, 2, 3, 3, 5, 6, 8, 8, 9, 9], [1,1,2]). % 

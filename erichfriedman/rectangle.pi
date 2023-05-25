@@ -1,0 +1,73 @@
+/* Janko Erich Friedman Rectangle
+https://erich-friedman.github.io/puzzle/rectpuzz/ */
+import util, sat.
+disjunct(Wr) =>     % disjunct(Wr): no two horiziontal rectangle edges share a corner or line segment
+    N2 = len(Wr),   % disjunct(Sr): no two vertical rectangle edges share a corner or line segment
+    foreach(I1 in 1..N2, I2 in 1..N2, I1 != I2)     % v- die Übersetzungen in Zeile 7 gelten nur für Wr -v
+        % DZ[I1] #= 0     Z0[I1,1] #!= Z0[I2]       S0[I1]   #> S0[I2]       S0[I1]   + DS[I1    #> S0[I2]
+        Wr[I1,3] #= 0 #\/ Wr[I1,1] #!= Wr[I2,1] #\/ Wr[I1,2] #> Wr[I2,2] #\/ Wr[I1,2] + Wr[I1,3] #< Wr[I2,2]
+    end.
+
+main(P) =>
+    input(P, Ar), N = len(Ar), Max = 6, % Max = upper limit for number of rectangles = magic
+    Z0 = new_list(Max), S0 = new_list(Max),  DZ = new_list(Max), DS = new_list(Max), % the rectangles
+    [Z0,S0] :: 1..N, [DZ,DS] :: 0..N, decreasing(DZ), % DZ = 0 <=> this rectangle is not needed
+    foreach(I in 1..Max) Z0[I] -1 + DZ[I] #=< N, S0[I] - 1 + DS[I] #=< N end, 
+    %  no two rectangles share a corner or part of an edge:
+    Wr = new_array(2*Max,3), % oben  + unten,  Z0, S0, DS
+    Sr = new_array(2*Max,3), % links + rechts, S0, Z0, DZ
+    foreach(I in 1..Max)
+        Wr[I,1] #= Z0[I], Wr[Max+I,1] #= Z0[I] + DZ[I], % waagrechte Linie oben, unten
+        Wr[I,2] #= S0[I], Wr[Max+I,2] #= S0[I],
+        Wr[I,3] #= DS[I], Wr[Max+I,3] #= DS[I],
+        % Das Array Sr füllen wir mit derart umsortierten Werten, dass disjunct(Sr) funktioniert:
+        Sr[I,1] #= S0[I], Sr[Max+I,1] #= S0[I] + DS[I], % senkrechte Linie links , rechts
+        Sr[I,2] #= Z0[I], Sr[Max+I,2] #= Z0[I],
+        Sr[I,3] #= DZ[I], Sr[Max+I,3] #= DZ[I]
+    end,
+    disjunct(Wr), disjunct(Sr),
+    % each number indicates the total area of rectangles it is contained in:
+    foreach(Z in 1..N, S in 1..N, Ar[Z,S] >= 0)
+        Ar[Z,S] #= sum([DZ[I]*DS[I] * (Z0[I] #=< Z)*(Z #< Z0[I]+DZ[I]) * (S0[I] #=< S)*(S #< S0[I]+DS[I]) : I in 1..Max])
+    end,
+    solve(vars(Z0) ++ vars(S0) ++ vars(DZ) ++ vars(DS) ++ vars(Wr) ++ vars(Sr)),  
+    foreach(Z in 1..N, S in 1..N)
+        if Ar[Z,S] > 0 then printf("%2d", Ar[Z,S]) else print("  ") end,
+        foreach(I in 1..Max, DZ[I] > 0)  
+            print(cond((Z0[I] =< Z,Z < Z0[I]+DZ[I], S0[I] =< S, S < S0[I]+DS[I]), chr(96+I), ' '))
+        end, 
+        if S = N then nl else print("|") end
+    end.
+
+input(0,Ar) =>
+    O = -1, 
+    Ar = {{ O, O, O, O, O},
+          { O, O,13, O, O},
+          { O, O, O, O, O},
+          { O,17, O, O, O},
+          { O, O, O, O, O}}. /* 
+     |     |    c|    c|     
+  a  |  a  |13a c|    c|     
+  a  |  a  |  a  |     |     
+  a  |17ab |  ab |   b |   b 
+     |   b |   b |   b |   b 
+CPU time 0.813 seconds, korrekt */
+input(5,Ar) =>
+    O = -1, 
+    Ar = {{ O, O, O, O,  O, O, O, O},
+          { O,25, O, O,  O, 8, O, O},
+          { O, O, O, O,  O, O, O, O},
+          { O, O, O, O,  O, O, O, O},
+          { O, O, O, O,  O, O, O, O},
+          { O, O, O, O,  O, O, O, O},
+          { O, O, O, O, 13, O,25, O},
+          { O, 6, O, O,  O, O, O, O}}. /* 
+    c   |    c   |    c   |    c   |    c   |        |  a     |  a     
+    c   |25  c   |    c   |    c e |    c e | 8    e |  a   e |  a     
+    c   |   bc   |    c   |    c e |    c e |      e |  a   e |  a     
+    c   |   bc   |    c   |    c   |    c   |        |  a     |  a     
+    c   |   bc   |    c   |    c   |    cd  |     d  |  a  d  |  a     
+        |   b    |        |        |     d  |     d  |  a  d  |  a     
+        |   b    |        |       f|13   d f|     d  |25a  d  |  a     
+        | 6 b    |        |       f|       f|        |  a     |  a     
+CPU time 3.3 seconds, korrekt */

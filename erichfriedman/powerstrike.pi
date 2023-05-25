@@ -1,0 +1,23 @@
+/* Janko Erich Friedman Power Strike
+https://erich-friedman.github.io/puzzle/powerstrike/ */
+main(No) ?=>
+    input(No, Factor, Start, N), 
+    Num = new_array(N+1), Num[1] = Start, Num[N+1] = Start,
+    foreach(I in 1..N)
+        Str = to_string(Num[I]), Len = len(Str), 
+        if Len = 1 then Num[I+1] = Num[I] * Factor
+        else
+            between(0, Len, Z), % 0 = multiply, Z > 0 digit to be erased
+            Num[I+1] = cond(Z = 0, Num[I] * Factor, to_int(Str[1..Z-1] ++ Str[Z+1..Len]))
+        end
+    end,
+    println(Num).
+
+input(0, Factor, Start, N) =>
+    Factor = 2, Start = 6, N = 5. % {6,12,24,48,96,6} correct
+
+input(1, Factor, Start, N) =>
+    Factor = 2, Start = 9, N = 8. % {9,18,36,6,12,24,48,96,9} correct
+
+input(16, Factor, Start, N) =>
+    Factor = 7, Start = 41, N = 8. % {41,287,2009,14063,4063,28441,8441,441,41} looks good

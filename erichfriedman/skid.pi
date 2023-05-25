@@ -1,0 +1,77 @@
+/* Janko Erich Friedman Skid
+https://erich-friedman.github.io/puzzle/skid/ */
+import util, sat.
+line(Map, Z,S, DZ,DS) = Res =>
+    Res = 1,
+    Search = [{Z,S,Z+DZ,S+DS}, {Z,S,Z+2*DZ,S+2*DS}, {Z-DZ,S-DS,Z+DZ,S+DS}, 
+              {Z+DZ,S+DS,Z,S}, {Z+2*DZ,S+2*DS,Z,S}, {Z+DZ,S+DS,Z-DZ,S-DS}],
+    foreach(Key in Search, Map.get(Key, 0) = 1) Res := 2 end.
+
+main(No) =>
+    input(No, Cs, Z0,S0), N = len(Cs),
+    % Cs[Z,S] = 2: Z|S can be omitted from the path; Cs[Z,S] = 1: Z|S must be included to the path
+    Vs = [{(Z,S), B} : Z in 1..N, S in 1..N, B = cond(Cs[Z,S] = 2, _, 1)] ++ [{(0,0), 1}],
+    VMap = new_map(),foreach({(Z,S),B} in Vs) VMap.put({Z,S}, B) end,
+    Es = [{(Z,S), (Z1,S1), _} : {(Z,S),_} in Vs, {(Z1,S1),_} in Vs, 
+            DZ = Z1 - Z, DS = S1 - S,
+           ((Z = Z1, abs(DS) = 1, Cs[Z1,S1] = 1);
+            (Z = Z1, abs(DS) = 2, Cs[Z1,S+sign(DS)] = 2);
+            (S = S1, abs(DZ) = 1, Cs[Z1,S1] = 1);
+            (S = S1, abs(DZ) = 2, Cs[Z+sign(DZ),S1] = 2))]
+       ++ [{(Z,S), (0,0), _} : {(Z,S),_} in Vs, (Z,S) != (Z0,S0)], % Finish dummy point
+    EMap = new_map(), foreach({(Zv,Sv),(Z,S),B} in Es) EMap.put({Zv,Sv,Z,S}, B) end,
+    foreach({(Z,S), B} in Vs) % missing vertices must be skipped orthogonally:
+        B #= 0 #=> sum([EMap.get({Z+DZ,S+DS,Z-DZ,S-DS},0) : (DZ,DS) in [(-1,0),(1,0),(0,-1),(0,1)]]) #> 0
+    end,
+    foreach({(Zv,Sv),(Z,S),B} in Es, abs(Z-Zv)+abs(S-Sv)=2) % skidding edge
+        B #=> VMap.get({(Zv+Z)//2,(Sv+S)//2}) #= 0 % the skipped vertex is not in the path (you can´t go back)
+    end, 
+    path_d(Vs, Es, (Z0,S0), (0,0)),
+    solve(vars(Vs) ++ vars(Es)), 
+    % foreach({(Z,S), (Z1,S1), 1} in Es) println({(Z,S), (Z1,S1)}) end,
+    SHor = " -", SVer = " |", 
+    foreach(Z in 1..N-1)
+        foreach(S in 1..N-1) printf( "%w%c", Cs[Z,S], SHor[line(EMap, Z,S, 0,1)] ) end, println(Cs[Z,N]),
+        foreach(S in 1..N)   printf( "%c ",           SVer[line(EMap, Z,S, 1,0)] ) end, nl
+    end,
+    foreach(S in 1..N-1)     printf( "%w%c", Cs[N,S], SHor[line(EMap, N,S, 0,1)] ) end, println(Cs[N,N]).
+
+input(0, Cs, Z0,S0) =>
+    Cs = {{1,2,2},
+          {1,1,1},
+          {1,2,s}},
+    Z0 = 3, S0 = 3. /*
+1-2-2
+|   | 
+1 1-1
+|     
+1-2-s korrekt */
+input(1, Cs, Z0,S0) =>
+    Cs = {{s,1,1},
+          {2,2,2},
+          {1,1,1}},
+    Z0 = 1, S0 = 1. /*
+s 1-1
+| | | 
+2 2 2
+| | | 
+1-1 1 korrekt */
+input(27, Cs, Z0,S0) =>
+    Cs = {{1,2,2,1,1,2},
+          {2,1,2,2,2,2},
+          {1,1,1,2,2,1},
+          {1,2,1,1,1,2},
+          {1,s,2,1,2,2},
+          {1,2,2,1,1,1}},
+    Z0 = 5, S0 = 2. /*
+1-2-2-1 1-2
+|     | | | 
+2 1-2-2 2 2
+| |     | | 
+1 1-1-2-2 1
+          | 
+1-2-1-1-1 2
+|       | | 
+1 s-2-1 2 2
+|     | | | 
+1-2-2-1 1-1 CPU time 0.015 seconds, korrekt */

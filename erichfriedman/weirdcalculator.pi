@@ -1,0 +1,21 @@
+/* Janko Erich Friedman Weirtd Calculator
+https://erich-friedman.github.io/puzzle/calculator/ */
+main =>
+    calc(1, 3),  % 1 + 7 -> 8 / 2 -> 4 / 2 -> 2 correct
+    calc(117,7). % 117 - 11 -> 106 / 2 -> 53 + 7 -> 60 / 2 -> 30 + 7 -> 37 * 3 -> 111 + 7 -> 118 correct
+
+calc(X1, Buttons) =>
+    X   = new_list(Buttons+1),
+    Ops = new_list(Buttons+1),
+    X[1] = X1, 
+    foreach(I in 1..Buttons)
+        between(1, 4, Op),
+            if Op = 1 then   X[I+1] = X[I] * 3,  Ops[I] = "* 3"
+        elseif Op = 2 then   X[I+1] = X[I] + 7,  Ops[I] = "+ 7"
+        elseif Op = 3 then   X[I+1] = X[I] - 11, Ops[I] = "- 11"
+        else X[I] mod 2 = 0, X[I+1] = X[I] // 2, Ops[I] = "/ 2"
+        end
+    end,
+    X[Buttons+1] = X1 + 1,
+    foreach(I in 1..Buttons) printf("%d %s -> ", X[I], Ops[I]) end,
+    print(X1+1).

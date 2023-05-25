@@ -1,0 +1,63 @@
+/* Janko Erich Friedman Palindrome Path - mit path_d und Memory
+https://erich-friedman.github.io/puzzle/palpath/ */
+import sat, util. 
+
+main(P) => 
+    input(P, Grid), N = len(Grid), Start = (N,1), Finish = (1,N), 
+    Max = sum(array_matrix_to_list(Grid)), % number of free squares
+    Vs = [ {(Z,S),1} : Z in 1..N, S in 1..N, Grid[Z,S] = 1], % all free squares are visited
+    Es = [ {(Z,S),(Zn,Sn),_} : {(Z,S),_} in Vs, {(Zn,Sn),_} in Vs, (Z,S)!=(Zn,Sn), abs(Zn-Z)=<1, abs(Sn-S)=<1],
+    path_d(Vs, Es, Start, Finish),
+    Len = new_array(N,N), Len :: 0..N-1, Len[N,1] #= 0, % length of move
+    Nr  = new_array(N,N), Nr :: 0..Max,  Nr[N,1]  #= 0, % number of move
+    Mcnt #= Nr[1,N], % number of moves
+    Steps = new_array(1+Max), Steps :: 1..N-1, % number of steps for each move
+    % First step has length 1:
+    foreach({Start,(Z,S),B} in Es) B #= 1 #=> Len[Z,S] #= 1 end, 
+    % Followimg steps update Len, Nr and Steps:
+    foreach ({(Zv,Sv),(Z,S),Bv} in Es, {(Z,S),(Zn,Sn),Bn} in Es) 
+        if Z-Zv = Zn-Z, S-Sv = Sn-S 
+        then % geradeaus
+            Bv + Bn #= 2 #=> (Len[Zn,Sn] #= Len[Z,S] + 1 #/\ Nr[Z,S]  #= Nr[Zv,Sv])
+        else % abbiegen          
+            I #= 1 + Nr[Z,S], element(I, Steps, X), 
+            Bv + Bn #= 2 #=> (Len[Zn,Sn] #= 1 #/\ Nr[Z,S] #= Nr[Zv,Sv] + 1 #/\ X #= Len[Z,S])
+        end
+    end,
+    % In the last step set Nr[1,N]:
+    foreach({(Z,S),Finish,B} in Es) B #= 1 #=> Nr[1,N] #= Nr[Z,S] + 1 end, 
+    % Steps[1+Mcnt] = Len[1,N]:
+    Icnt #= 1 + Mcnt, element(Icnt, Steps, Len[1,N]), 
+    % Steps[2..1+Mcnt] is a palindrome:
+    foreach(I in 1..Max-1, J in I+1..Max) I + J #= Mcnt + 1 #=> Steps[1+I] #= Steps[1+J] end,
+    solve(vars(Es) ++ vars(Len) ++ vars(Nr) ++ Steps ++ {Mcnt, Icnt}),
+    println(steps=Steps[2..1+Mcnt]), % println([{(Zv,Sv),(Z,S)} : {(Zv,Sv),(Z,S),1} in Es]),
+    foreach(Z in 1..N, S in 1..N) 
+      if membchk({(Z,S),1}, Vs)
+      then printf("%2d(%d)|", Nr[Z,S], Len[Z,S])
+      else print("     |")
+      end, 
+      if S = N then nl end
+    end.
+
+input(0, Grid) =>
+    Grid = {{1,1,1}, {1,1,0}, {1,1,1}}. /* 0 = black square
+steps = {2,1,1,1,2}
+4(1)|4(1)|5(2)|
+3(1)|2(1)|7(1)|
+0(0)|0(1)|1(2)| CPU time 0.03 seconds, correct */
+input(1, Grid) =>
+    Grid = {{1,0,1,1}, {1,1,0,1}, {1,1,0,1}, {1,1,1,1}}. /*
+steps = {1,1,2,1,1,1,1,2,1,1}
+ 3(2)|     | 9(1)|10(1)|
+ 2(1)| 4(1)|     | 8(2)|
+ 2(1)| 5(1)|     | 7(1)|
+ 0(0)| 1(1)| 6(1)| 7(1)| CPU time 0.045 seconds, correct */
+input(17, Grid) =>
+    Grid = {{1,0,1,0,1}, {1,1,1,1,1}, {1,1,1,1,0}, {1,1,1,0,1}, {1,0,1,1,1}}. /*
+steps = {1,1,1,1,1,1,2,1,1,1,2,1,1,1,1,1,1}
+11(2)|     |14(1)|     |17(1)|
+10(1)|12(1)|13(1)|15(1)|16(1)|
+10(1)| 9(1)| 3(1)| 4(1)|     |
+ 1(1)| 2(1)| 8(1)|     | 5(1)|
+ 0(0)|     | 7(2)| 6(1)| 6(1)| CPU time 0.393 seconds, correct */

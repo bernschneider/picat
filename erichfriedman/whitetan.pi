@@ -1,0 +1,44 @@
+/* Janko Erich Friedmann White And Tan
+https://erich-friedman.github.io/puzzle/whitetan/ */
+import util, sat. 
+
+main(Nr) => 
+    input(Nr, C), N = len(C),
+    M = new_array(N,N), M :: 1..2, % 1 = white, 2 = tan
+    foreach(Z in 1..N, S in 1..N)
+        if     C[Z,S] = n  then L = [M[Z-D,S] : D in 1..Z-1]
+        elseif C[Z,S] = s  then L = [M[Z+D,S] : D in 1..N-Z]
+        elseif C[Z,S] = w  then L = [M[Z,S-D] : D in 1..S-1]
+        elseif C[Z,S] = e  then L = [M[Z,S+D] : D in 1..N-S]
+        elseif C[Z,S] = nw then L = [M[Z-D,S-D] : D in 1..min(Z,S)-1]
+        elseif C[Z,S] = ne then L = [M[Z-D,S+D] : D in 1..min(Z,N+1-S)-1]
+        elseif C[Z,S] = sw then L = [M[Z+D,S-D] : D in 1..min(N+1-Z,S)-1]
+        elseif C[Z,S] = se then L = [M[Z+D,S+D] : D in 1..min(N+1-Z,N+1-S)-1]
+        end,
+        M[Z,S] #= sum([(X #= M[Z,S]) : X in L])
+    end,
+    solve(M),
+    foreach(Z in 1..N, S in 1..N) 
+        printf("%2w:%d|", C[Z,S], M[Z,S]), if S = N then nl end
+    end.
+
+input(1, C) =>
+    C = {{ s, s,sw, w},
+         {se,se,sw, w},
+         { e,ne, w,nw},
+         { n, e,nw, n}}. /*
+ s:2| s:1|sw:2| w:2|
+se:1|se:2|sw:2| w:2|
+ e:2|ne:2| w:2|nw:1|
+ n:2| e:1|nw:1| n:2| korrekt */
+input(15, C) =>
+    C = {{ e,se,se, w,sw},
+         { s, s, e, s, s},
+         {ne,se,ne, n,nw},
+         {ne, e,ne,nw, n},
+         { e, n, e,nw, n}}. /*
+ e:2|se:1|se:2| w:2|sw:1|
+ s:2| s:2| e:2| s:2| s:2|
+ne:2|se:1|ne:1| n:2|nw:2|
+ne:1| e:2|ne:2|nw:2| n:1|
+ e:2| n:2| e:1|nw:1| n:2| korrekt */

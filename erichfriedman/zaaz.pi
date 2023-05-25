@@ -1,0 +1,36 @@
+/* Janko Erich Friedman Zaaz
+https://erich-friedman.github.io/puzzle/zaaz/ */
+import util, sat.
+
+printM(M) =>
+    N = len(M), Chr = "AZ",
+    foreach(Z in 1..N, S in 1..N) 
+		printf("%c ",Chr[1+M[Z,S]]), if S = N then nl end
+    end, nl.
+
+main(No) =>
+    input(0, M1, M2), 
+    M1 :: 0..1, M2 :: 0..1,
+    all_different([Val : L in M1.rows() ++ M1.columns() ++ M2.rows() ++ M2.columns(),
+                   Val #= 8 * L[1] + 4 * L[2] + 2 * L[3] + L[4]]),
+    solve(vars(M1) ++ vars(M2)),
+    printM(M1), printM(M2).
+               
+input(0, M1, M2) => % A=0, Z=1
+   M1 = {{1,_,_,1},
+         {_,_,_,_},
+         {_,0,1,_},
+         {_,_,0,_}},
+   M2 = {{1,_,_,0},
+         {_,_,_,_},
+         {_,_,_,1},
+         {_,0,_,_}}. /*
+Z A Z Z 
+A Z Z Z 
+A A Z Z 
+Z Z A Z 
+
+Z A Z A 
+A Z Z A 
+A A A Z 
+A A A A     CPU time 0.011 seconds, correct */

@@ -1,0 +1,45 @@
+/* Janko Erich Friedman Number Link
+https://erich-friedman.github.io/puzzle/numlink/ */
+import util, cp.
+
+main(No) =>
+    input(No, Corners, Chains), 
+    Xs = new_array(9), Xs :: 1..9, all_different(Xs),
+    foreach(I in 1..5++7..9, Corners[I] > 0) 
+        Nbs = [],
+        foreach(Chain in Chains)
+            J = find_first_of(Chain, I),
+            if J > 0 then
+                if J > 1          then Nbs := [Xs[Chain[J-1]]|Nbs] end,
+                if J < len(Chain) then Nbs := [Xs[Chain[J+1]]|Nbs] end
+            end
+        end, 
+        C = Corners[I] - 3, 
+        % Cs = 0: Each digit in a triangle should be the first digit of the product of neighboring digits. 
+        % Cs = 1: Each digit in a square should be the last digit of the product of neighboring digits. 
+        % Cs = 2: Each digit in a pentagon should be the first digit of the sum of neighboring digits. 
+        % Cs = 3: Each digit in a hexagon should be the last digit of the sum of neighboring digits:
+        if C div 2 = 0 then Res #= prod(Nbs) else Res #= sum(Nbs) end,
+        if C mod 2 = 0 
+        then Res #>= 100                 #=> Xs[I] #= Res div 100, % first digit
+             (Res #>= 10 #/\ Res #< 100) #=> Xs[I] #= Res div 10, 
+             Res #< 10                   #=> Xs[I] #= Res 
+        else Xs[I] #= Res mod 10 % last digit
+        end
+    end, 
+    solve(Xs), 
+    println(1..9),
+    println(Xs).
+
+input(1, Corners, Chains) =>
+    Corners = [3,5,6,4,0,5,6,4,4], Chains = [[2,3,1,4,8,9,7,6], [6,2], [5,3,7]]. /*
+[1,2,3,4,5,6,7,8,9]
+{3,5,4,8,9,1,7,6,2} korrekt */
+input(2, Corners, Chains) =>
+    Corners = [6,6,0,5,3,4,6,3,3], Chains = [[1,2,9,8,3], [3,1], [1,8], [2,4,9], [2,5,9], [2,6,9], [2,7,9]]. /*
+[1,2,3,4,5,6,7,8,9]
+{9,6,8,1,4,2,3,5,7} korrekt */
+input(3, Corners, Chains) =>
+    Corners = [3,5,5,0,5,5,0,5,4], Chains = [[7,6,1,2,5,3,4,9,8], [5,8]]. /*
+[1,2,3,4,5,6,7,8,9]
+{1,3,9,7,2,4,5,8,6} sieht gut aus! (Musterlösung {1,3,9,7,2,5,4,8,6} ) */

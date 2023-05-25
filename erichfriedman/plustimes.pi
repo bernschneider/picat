@@ -1,0 +1,69 @@
+/* Janko Erich Friedman Plus Times 
+All digits and operators must be used! Notice line 16 below!
+https://erich-friedman.github.io/puzzle/plustimes/ */
+import planner.
+
+main(No) => 
+    input(No, Digits, Ops),
+    S0 = ([], Digits, Ops), % Stack. Digits, Operators
+    best_plan_unbounded(S0, Plan),
+    p2i(Plan, [], Infix), println(Infix).
+
+final(S1) => 
+	S1 = ([], [], []).
+
+action((Stack, I, Ops), NextS, Action, ActionCost) ?=> % push a number to the stack
+    Max = 2, % maximum number of digits per number in the formula; increase if necessary!
+    Acc = 0, between(1, Max, Cnt), % Cnt = number of digits
+    Digits = new_list(1+Cnt),
+    Digits[1] = I,                                       % don´t use 0 as first digit -v
+    foreach(D in 1..Cnt) select(I1, Digits[D], Digits[D+1]), Acc := 10 * Acc + I1, Acc > 0 end,  
+	NextS = ([Acc|Stack], Digits[Cnt+1], Ops),
+    Action = Acc,
+    ActionCost = 1.
+
+action(([X,Y], I, Ops), NextS, Action, ActionCost) ?=> % +
+    membchk(+, Ops),
+    Ops1 = delete(Ops, +),
+    Y > 0, 
+    Z = X + Y,
+	NextS = ([Z], I, Ops1),
+    Action = '+',
+    ActionCost = 1.
+
+action(([X,Y],I, Ops), NextS, Action, ActionCost) ?=> % *
+    membchk(*, Ops),
+    Ops1 = delete(Ops, *),
+	Z = X * Y,
+	NextS = ([Z], I, Ops1),
+    Action = '*',
+    ActionCost = 1.
+
+% Finalize: Der Stack enthält nur noch 2x die Zahl N, die Digits und die Ops sind aufgebraucht:
+action(S, S1, Action, ActionCost) =>
+    S = ([N, N], [], []), 
+    S1 =  ([], [], []), 
+    Action = '=',
+    ActionCost = 1.
+
+% Convert postfix to infix for printout:
+p2i([N|Postfix],  Stack, Infix), number(N) => p2i(Postfix, [to_string(N)|Stack], Infix).
+p2i([+|Postfix], [Y, X |Stack], Infix)     => p2i(Postfix, [("(" ++ X ++ " + " ++ Y ++ ")")|Stack], Infix).
+p2i([*|Postfix], [Y, X |Stack], Infix)     => p2i(Postfix, [(X ++ " * " ++ Y)|Stack], Infix).
+p2i([=|Postfix], [Y, X |Stack], Infix)     => p2i(Postfix, [(X ++ " = " ++ Y)|Stack], Infix).
+p2i([], Stack, Infix) => Infix = Stack[1].
+
+input(0, [0, 2, 3, 4, 5], [+, *]).    % (2 + 4) * 5 = 30,  korrekt
+input(a, [1, 2, 3, 4, 5], [+, *]).    % (2 * 4 + 5) = 13,  korrekt
+input(b, [1, 2, 3, 4, 6], [+, *]).    % (1 + 3) * 6 = 24,  korrekt
+input(p, [0, 1, 2, 3, 5, 6], [+, *]). % (3 * 16 + 2) = 50, korrekt
+input(q, [0, 1, 2, 3, 6, 7], [+, *]). % (2 * 7 + 16) = 30,  korrekt
+input(r, [0, 1, 2, 3, 6, 9], [+, *]). % (2 + 13) * 6 = 90,  korrekt
+input(s, [0, 4, 5, 6, 8, 9], [+, *]). % (4 * 9 + 50) = 86,  korrekt
+input(t, [1, 2, 5, 6, 7, 8], [+, *]). % (2 * 8 + 51) = 67,  korrekt
+input(u, [1, 4, 6, 7, 8, 9], [+, *]). % (4 * 7 + 61) = 89,  korrekt
+input(v, [2, 3, 4, 5, 6, 8], [+, *]). % (2 * 3 + 58) = 64,  korrekt
+input(w, [2, 3, 4, 7, 8, 9], [+, *]). % (3 * 7 + 28) = 49,  korrekt
+input(x, [2, 4, 5, 6, 8, 9], [+, *]). % (2 * 8 + 49) = 65,  korrekt
+input(y, [2, 4, 6, 7, 8, 9], [+, *]). % (6 * 9 + 24) = 78,  korrekt
+input(z, [3, 5, 6, 7, 8, 9], [+, *]). % (5 * 7 + 63) = 98,  korrekt

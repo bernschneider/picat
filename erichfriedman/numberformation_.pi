@@ -1,0 +1,33 @@
+/* Janko Erich Friedman Number Formation
+https://erich-friedman.github.io/puzzle/form/ */
+import util. %, cp.
+compute(N1, N2, Op) = Res =>
+    if     Op = 1 then Res = N1 + N2
+    elseif Op = 2 then Res = N1 - N2
+    elseif Op = 3 then Res = N1 * N2
+    elseif Op = 4 then N1 mod N2 = 0, Res = N1 // N2
+    elseif Op = 5 then Res = N1 ** N2
+    end.
+
+main(No) =>
+    input(No, Groups),
+    Ps = new_list(3),
+    foreach(G in 1..3) permutation(Groups[G], Ps[G]) end,
+    % Ps = [P : Group in Groups, permutation(Group, P)], 
+    Brackets = new_list(3), % 1 = (a op b) op c, 2 = a op (b op c)
+    foreach(G in 1..3) between(1,2,Brackets[G]) end, % Brackets = [2,1,1],
+    Ops = new_array(3,2), % + - * / **
+    foreach(G in 1..3, I in 1..2) between(1,4, Ops[G,I]) end, % Ops = {{4,2}, {1,4}, {1,2}},
+    between(1,100, Res),
+    foreach(G in 1..3)
+        Ns = Ps[G], Op = Ops[G], Bracket = Brackets[G], 
+        if Bracket = 1 then % (a op b) op c
+            Res1 = compute(Ns[1], Ns[2], Op[1]), Res = compute(Res1, Ns[3], Op[2])
+        else                % a op (b op c)
+            Res2 = compute(Ns[2], Ns[3], Op[2]), Res = compute(Ns[1], Res2, Op[1])
+        end
+    end,
+    println(Ps), println(Brackets), println(Ops).
+
+input(0, Groups) =>
+    Groups = [[15,19,24], [11,30,36], [20,22,36]].

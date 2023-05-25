@@ -1,0 +1,44 @@
+/* Janko Erich Friedman Replacement
+https://erich-friedman.github.io/puzzle/replace/ */
+import planner.
+
+main => 
+    _H=1, S=2,
+    S0 = [S,S], 
+    plan(S0,10,Plan),
+    foreach(Mv in Plan) printf("%s%n", Mv) end. /*
+2: S->HHS
+2: HHS->H
+1: SH->HSS
+3: S->HHS
+2: SH->HSS
+1: HHS->H
+4: S->HHS
+4: HHS->H
+2: SH->HSS
+4: SH->HSS
+CPU time 0.001 seconds, correct */
+
+final(S1) => 
+	H=1, S=2, S1 = [H,H,S,H,S,S]. 
+
+action(S0,S1,Action,Cost) ?=> % rule 1
+    H=1, S=2,
+    between(1, len(S0), I),
+    S0[I] = S,
+    S1 = S0[1..I-1] ++ [H,H,S] ++ S0[I+1..len(S0)], len(S1) =< 6,
+    Action = to_string(I) ++ ": S->HHS", Cost = 1.
+
+action(S0,S1,Action,Cost) ?=> % rule 2
+    H=1, S=2,
+    between(1, len(S0)-2, I),
+    S0[I..I+2] = [H,H,S],
+    S1 = S0[1..I-1] ++ [H] ++ S0[I+3..len(S0)], len(S1) =< 6,
+    Action = to_string(I) ++ ": HHS->H", Cost = 1.
+
+action(S0,S1,Action,Cost) ?=> % rule 3
+    H=1, S=2,
+    between(1, len(S0)-1, I),
+    S0[I..I+1] = [S,H],
+    S1 = S0[1..I-1] ++ [H,S,S] ++ S0[I+2..len(S0)], len(S1) =< 6,
+    Action = to_string(I) ++ ": SH->HSS", Cost = 1.

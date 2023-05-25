@@ -1,0 +1,64 @@
+/* Janko Erich Friedman Rook End Mazes Nr. 1
+https://erich-friedman.github.io/puzzle/rookend/ */
+import sat. 
+% Print '-' bzw. '|' if a directed edge 1 -> 2 or 2 -> 1 exists (used in rows 41ff):
+edge(EMap, Z1,S1, Z2,S2) = 1 + EMap.get({Z1,S1, Z2,S2} ,0) + EMap.get({Z2,S2, Z1,S1}, 0). 
+main ?=>	
+    A = {{0,0,0,1,0,0,0,0}, % 1 = Black
+         {1,0,0,0,0,0,0,0},
+         {0,0,0,0,3,0,0,0}, % 3 = Finish 
+         {0,0,0,0,1,0,0,0},
+         {1,0,0,0,0,0,2,0}, % 2 = Start
+         {0,0,0,0,0,1,0,0},
+         {0,1,0,0,1,0,0,0},
+         {0,0,0,0,0,0,0,1}}, N = len(A), Start = (1,1), Finish = (1,1),
+    foreach(Z in 1..N, S in 1..N) if A[Z,S] = 2 then Start := (Z,S) elseif A[Z,S] = 3 then Finish := (Z,S) end end,
+    No = new_array(N,N), No :: 0..N*N, No[Start[1],Start[2]] #= 1, % numbering the vertices in the path    
+    Vs = [{(Z,S), _} : Z in 1..N, S in 1..N, A[Z,S] != 1], % mögliche Vertices
+    foreach({(Z,S), B} in Vs) B #= 1 #<=> No[Z,S] #> 0 end, % breaking symmetry
+    %        F ->  S (schließt den Loop)
+    Es = [{Finish, Start, 1}] ++ [{(Z,S), (Z1,S1), _} : {(Z,S),_} in Vs, {(Z1,S1),_} in Vs, abs(Z1 - Z) + abs(S1 - S) = 1], % mögliche Kanten
+    % println(Es),
+    hcp(Vs, Es), % die gerichteten Kanten in Es formen einen Hamilton-Cycle auf Vs
+    VMap = new_map(), foreach ({(Z,S),B}           in Vs) VMap.put({Z,S}, B)         end,
+    EMap = new_map(), foreach ({(Z1,S1),(Z2,S2),B} in Es) EMap.put({Z1,S1,Z2,S2}, B) end,
+	% The path can only change direction when it hits a black square, a square that contains part of the existing path, or the edge of the grid:
+    foreach({(Z1,S1), (Z2,S2), B} in Es, (Z1,S1)!=Finish) % die Kante von F nach S nehmen wir aus
+        B #= 1 #=> No[Z2,S2] #= 1 + No[Z1,S1],
+        DZ = Z2 - Z1, DS = S2 - S1, Z3 = Z2 + DZ, S3 = S2 + DS, % die Verlängerung der Kante führt nach (Z3,S3)
+        if 0<Z3, Z3=<N, 0<S3, S3=<N, A[Z3,S3] != 1 then % not the edge of the grid, does not hit a black square
+             B #= 1 #=> VMap.get({Z3,S3}) #= 1, % (Z3,S3) is part of the path
+            (B #= 1 #/\ EMap.get({Z2,S2,Z3,S3}) #= 0) #=> No[Z3,S3] #< No[Z2,S2]  % (Z3,S3) is part of the existing path
+        end
+	end, 
+    % the path must dead end at F = Finish, d.h. alle Nachbarn sind ein Vertex oder schwarz:
+    foreach((Z,S) in [(Finish[1]-1,Finish[2]), (Finish[1],Finish[2]-1), (Finish[1],Finish[2]+1), (Finish[1]+1,Finish[2])]) 
+        VMap.get({Z,S},1) #= 1 
+    end,
+    solve(values(VMap) ++ values(EMap)),
+    SHor = " -", SVer = " |",
+    foreach(Z in 1..N-1)
+    	foreach(S in 1..N-1) printf("%c%c", symb(A, VMap, Z,S), SHor[edge(EMap,Z,S,Z,S+1)]) end, println(symb(A, VMap, Z,N)),
+    	foreach(S in 1..N) printf("%c ",  SVer[edge(EMap,Z,S,Z+1,S)] ) end, nl
+    end,
+    foreach(S in 1..N-1) printf("%c%c", symb(A, VMap, N,S), SHor[edge(EMap,N,S,N,S+1)]) end, println(symb(A, VMap, N,N)),
+    nl, fail. /* 
+  *-* X        
+  | |           
+X * * *-*-*-*-*
+  | | |       | 
+  * * * F-*   *
+  | | |   |   | 
+  * *-* X *-*-*
+  |             
+X *-*-*-*   S-*
+        |     | 
+*-*-*-*-* X   *
+|             | 
+* X     X *-*-*
+|         |     
+*-*-*-*-*-*   X
+CPU time 5.406 seconds, no more solutions, korrekt */
+symb(A, VMap, Z,S) = C =>
+    SGrid = "XSF", 
+    if A[Z,S] > 0 then C = SGrid[A[Z,S]] else C = cond(VMap.get({Z,S},0) = 1, '*',  ' ') end.

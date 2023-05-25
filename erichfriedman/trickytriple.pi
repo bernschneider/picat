@@ -1,0 +1,47 @@
+/* Janko Erich Friedman: Tricky Triple
+https://erich-friedman.github.io/puzzle/shape/ */
+import util, cp.
+
+main(No) =>	
+    input(No, M), M :: 0..3, NZ = len(M), NS = len(M[1]),
+    foreach(Z in 1..NZ, S in 1..NS, var(M[Z,S])) M[Z,S] #> 0 end,
+    D1 = [[M[R,S-R] : R in 1..NZ, 0<S-R, S-R=<NS] : S in 2..NZ+NS],  % Diagonalen /
+    D2 = [[M[R,D+R] : R in 1..NZ, 0<D+R, D+R=<NS] : D in -NZ+1..NZ], % Diagonalen \
+    foreach(L in M.rows() ++ M.columns() ++ D1 ++ D2)
+        foreach(I in 3..len(L)) 
+            (L[I-2] #=  L[I-1] #/\ L[I-2] #!= 0) #=> L[I] #!= L[I-1], 
+            (L[I-2] #!= L[I-1] #/\ L[I-2] #!= 0 #/\ L[I-1] #!= 0 #/\ L[I] #!= 0) #=> (L[I] #= L[I-2] #\/ L[I] #= L[I-1])
+        end
+    end, 
+    solve(M), Sym = " xo^",
+    foreach(Z in 1..NZ, S in 1..NS)
+        printf("%c|", Sym[1+M[Z,S]]),
+        if S = NS then nl end
+    end.
+
+input(0, M) => % Qu=1, Kr=2, Dr=3
+    M = {{_,3,2,_,2},
+         {3,_,_,0,1},
+         {_,_,_,_,0},
+         {1,_,_,_,_},
+         {2,_,_,_,_}}. /*
+^|^|o|^|o|
+^|x|x| |x|
+x|^|x|x| |
+x|x|o|o|^|
+o|x|o|o|x| korrekt */
+input(22, M) =>
+    M = {{3,_,_,_,_,_,_},
+         {_,_,0,2,_,1,_},
+         {_,_,_,0,_,2,_},
+         {1,_,_,3,0,_,2},
+         {_,_,0,_,_,1,_},
+         {3,_,2,_,_,_,_},
+         {1,_,_,_,_,3,_}}. /*
+^|^|o|o|x|x|^|
+x|^| |o|x|x|^|
+^|x|x| |^|o|o|
+x|x|^|^| |o|o|
+^|o| |^|x|x|^|
+^|o|o|x|o|x|o|
+x|^|^|x|x|^|^| korrekt */

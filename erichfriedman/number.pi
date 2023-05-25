@@ -1,0 +1,51 @@
+/* Janko Erich Friedman Number 
+https://erich-friedman.github.io/puzzle/number/1.. */
+import util, cp.
+
+main(No) =>
+    input(No, Grid), NZ = len(Grid), NS = len(Grid[1]), 
+    Digits = vars(Grid), Digits :: 1..len(Digits), all_different(Digits),
+    foreach(L in Grid.rows() ++ Grid.columns, var(last(L)))
+        Op1 = L[2], 
+        if     Op1 = + then L[1] + L[3] #= ZE % ZE = Zwischenergebnis
+        elseif Op1 = - then L[1] - L[3] #= ZE
+        elseif Op1 = * then L[1] * L[3] #= ZE
+        elseif Op1 = / then L[3] * ZE #= L[1]
+        end,
+        if len(L) = 5 then L[5] #= ZE
+        else Op2 = L[4],
+            if     Op2 = + then ZE + L[5] #= L[7]
+            elseif Op2 = - then ZE - L[5] #= L[7]
+            elseif Op2 = * then ZE * L[5] #= L[7]
+            elseif Op2 = / then L[5] * L[7] #= ZE
+            end
+        end
+    end,
+    solve(Digits),
+    foreach(Z in 1..NZ, S in 1..NS)
+        if Grid[Z,S] = 0 then print("  ") else printf("%w ", Grid[Z,S]) end,
+        if S = NS then nl end
+    end.
+
+input(1, Grid) =>
+    Grid = {{_,/,_,=,_},
+            {+,0,*,0,0},
+            {_,+,_,=,_},
+            {=,0,=,0,0},
+            {_,0,_,0,0}}. /*
+6 / 2 = 3 
++   *     
+1 + 4 = 5 
+=   =     
+7   8      correct */
+input(2, Grid) =>
+    Grid = {{_,*,_,+,_,=,_},
+            {+,0,/,0,+,0,0},
+            {_,*,_,-,_,=,_},
+            {=,0,=,0,=,0,0},
+            {_,0,_,0,_,0,0}}. /*
+1 * 6 + 5 = 11 
++   /   +     
+7 * 2 - 4 = 10 
+=   =   =     
+8   3   9       correct */

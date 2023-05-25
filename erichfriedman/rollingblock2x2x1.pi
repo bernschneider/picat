@@ -1,0 +1,72 @@
+/* Janko Erich Friedman Rolling Block Mazes for 2x2x1 slab
+Usage: update final state according to selected instance, call main(<instance no.>)
+https://erich-friedman.github.io/puzzle/rolling/ 
+Solution for 2x2x1 slab */
+import planner.
+
+check(X, V) = cond(X = V, 1, 0).
+
+main(No) =>	
+    input(No, C, Z0,S0,Ori0), 
+    InitS =  [C, Z0,S0,Ori0],
+    best_plan(InitS, Plan),
+    println(Plan).
+
+final(State) => 
+    State = [_, 3,5,2]. % instance 0
+    % State = [_, 3,7,2]. % instance 1
+    % State = [_, 7,3,1]. % instance 2
+
+action([C, Z,S,Ori], State1, Action, Cost) =>
+    Cost = 1, NZ = len(C), NS = len(C[1]), 
+    between(1, 4, Dir), Chr = "NESW", Action = Chr[Dir], % moving direction N=1, E=2, S=3, W=4
+    %                          E or W   N or S   
+    Ori1 = cond(Dir mod 2 = 0, 2 - Ori, cond(Ori = 2, 2, 1 - Ori)), % Dir  check Lage
+    if     Dir = 1 then Z1 = Z - 2 + check(Ori, 0), Z1 > 0,   S1 = S % N   flach = 0
+    elseif Dir = 2 then S1 = S + 2 - check(Ori, 2), S1 =< NS, Z1 = Z % E   vertikal = 2
+    elseif Dir = 3 then Z1 = Z + 2 - check(Ori, 1), Z1 =< NZ, S1 = S % S   horizontal = 1
+    elseif Dir = 4 then S1 = S - 2 + check(Ori, 0), S1 > 0,   Z1 = Z % W   flach = 0
+    end,
+    % the squares of the new slab position are all empty:
+    C[Z1,S1] = 0, 
+    if (Ori1 = 0; Ori1 = 2) then Z1 < NZ, C[Z1+1,S1]   = 0 end,
+    if (Ori1 = 0; Ori1 = 1) then S1 < NS, C[Z1,S1+1]   = 0 end,
+    if  Ori1 = 0            then          C[Z1+1,S1+1] = 0 end, 
+    State1 = [C, Z1,S1,Ori1].
+
+input(0, C, Z0,S0,Ori0) =>
+    Z0 = 1, S0 = 6, % start coordinates
+    Ori0 = 2, % start orientation: 0 = flach, 1 = horizontal, 2 = vertikal
+    C = {{0,0,0,0, 0,0,0,1},
+         {0,0,0,0, 1,0,0,0},
+         {0,0,0,0, 0,0,0,0},
+         {0,0,1,0, 0,0,1,0},
+         {0,0,0,1, 0,0,1,0},
+         {0,0,0,0, 0,0,0,0},
+         {0,0,0,0, 0,0,0,0},
+         {0,0,0,1, 0,0,0,0}}. /*
+SSSENWWWSENWNNNESWSSEEEENNWNWWSWSSEEENNWNWWSSSENEESWNN CPU time 0.028 seconds, correct */
+input(1, C, Z0,S0,Ori0) =>
+    Z0 = 5, S0 = 4, 
+    Ori0 = 2, % Ori: 0 = flach, 1 = horizontal, 2 = vertikal
+    C = {{0,0,0,0, 0,0,0,0},
+         {0,0,0,0, 0,0,0,0},
+         {0,0,0,0, 1,0,0,0},
+         {0,0,0,1, 0,1,0,0},
+         {0,0,1,0, 0,0,1,0},
+         {0,0,0,0, 0,0,0,0},
+         {0,0,0,0, 0,0,0,0},
+         {0,0,0,1, 0,0,0,0}}. /*
+ESWWNNNNESWSSEEEENNWNWWSWSSEEESENWWWWNNENWSENEEESSSWNWWSWNNNEEEES looks good! */
+input(2, C, Z0,S0,Ori0) =>
+    Z0 = 2, S0 = 2, 
+    Ori0 = 2, % Ori: 0 = flach, 1 = horizontal, 2 = vertikal
+    C = {{0,0,0,0, 0,0,0,0},
+         {0,0,0,1, 0,0,0,0},
+         {0,0,0,0, 0,0,0,0},
+         {0,0,1,0, 1,0,0,0},
+         {0,0,1,0, 1,0,0,0},
+         {0,0,0,0, 0,0,1,0},
+         {0,0,0,0, 0,1,0,0},
+         {0,0,0,0, 0,0,0,0}}. /*
+SSESWNEESWNWNNENEESESWNWWNWSSSENESWWNNNEEESWNENWWWSSSSE CPU time 0.0 seconds, correct */

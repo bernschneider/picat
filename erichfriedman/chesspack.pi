@@ -1,13 +1,12 @@
-/* Erich Friedman Chess Pack
+/* Janko Erich Friedman Chess Pack
 https://erich-friedman.github.io/puzzle/chesspack/ */
-import sat.
+import util, sat.
 rev(X, Y) => ((X = 0, Y = 0); (X > 0, Y < 0); (X < 0, Y > 0)).
 
 main(No) =>
     input(No, M), NZ = len(M), NS = len(M[1]), 
     % Put a chess king, queen, rook, bishop, or knight in each vacant square ..
-    M :: 1..5, Mvars = vars(M), 
-    if No = p0 then M[4,1] #= 1 end, % <<<< constrain moved here from input(p0,M)
+    M :: 1..5, Mvars = array_matrix_to_list(M), 
     Vss = [[{(Z,S), _} : Z in 1..NZ, S in 1..NS] : _ in 1..5],
     Vmaps = [new_map() : _ in 1..5], 
     foreach (F in 1..5, {(Z,S),B} in Vss[F]) Vmaps[F].put({Z,S}, B) end,
@@ -48,13 +47,7 @@ input(0, M) => % Ki=1, Qu=2, Ro=3, Bi=4, Kn=5
     M = {{_,_,_,_,_},
          {_,5,_,_,_},
          {_,_,_,_,_},
-         {1,_,_,_,_}}. /* no solution */
-
-input(p0, M) => % Ki=1, Qu=2, Ro=3, Bi=4, Kn=5
-    M = {{_,_,_,_,_},
-         {_,5,_,_,_},
-         {_,_,_,_,_},
-         {_,_,_,_,_}}. /* king constrain (1) moved to code line 10
+         {1,_,_,_,_}}. /* 
 *|X|*|L|*|
 X|L|X|+|+|
 @|X|*|+|L|

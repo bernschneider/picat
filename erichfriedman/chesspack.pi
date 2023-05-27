@@ -32,8 +32,8 @@ main(No) =>
         hcp(Vss[F], Ess[F]) % all squares of F can be visited by that piece in a cycle ..
     end,
     % .. without reversing its direction: 
-    foreach(F in 2..4, {(Zv,Sv),(Z,S),Bv} in Ess[F], {(Z,S),(Zn,Sn),Bn} in Ess[F],
-            rev(Z - Zv, Zn - Z), rev(S - Sv, Sn - S))
+    foreach(F in 2..4, {(Z1,S1),(Z2,S2),Bv} in Ess[F], {(Z3,S3),(Z4,S4),Bn} in Ess[F],
+            Z2 = Z3, S2 = S3, rev(Z2 - Z1, Z4 - Z3), rev(S2 - S1, S4 - S3))
         Bv + Bn #< 2
     end,
     solve(vars(Vss) ++ vars(Ess) ++ vars(M)),

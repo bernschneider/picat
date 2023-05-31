@@ -1,0 +1,67 @@
+/* Janko Erich Friedman Numerical Jigsaw
+https://erich-friedman.github.io/puzzle/jigsaw/ */
+import util.
+% Include brackets before * to make sure operations are done from left to right:
+bracket(Term) = Res => % example: 8-1*8 -> (8-1)*8 = 56, not 8 - 8 = 0
+    I = find_first_of(Term, *),
+    if I > 0 then Res = "(" ++ Term[1..I-1] ++ ")" ++ Term[I..len(Term)]
+             else Res = Term
+    end.
+
+main(No) =>
+    input(No, M), Mt = transpose(M), N = len(Mt),
+    permutation(to_list(Mt), Pt), % permutate the columns of M
+    foreach(I in 1..N)
+        between(0,1,Rev),
+        if Rev = 1 then % this column must be reversed
+            Pt[I] := reverse(Pt[I]),
+            foreach(J in 1..4) % 'rotate' digits if necessary:
+                if     Pt[I,J] = '6' then Pt[I,J] := '9'
+                elseif Pt[I,J] = '9' then Pt[I,J] := '6'
+                end
+            end
+        end
+    end, 
+    P = transpose(Pt), 
+    foreach(Line in P)
+        [LHS,RHS] = Line.split("="), % make sure, that exactly one = is in the line
+        catch(parse_term(bracket(LHS)) =:= parse_term(bracket(RHS)), _Exception, fail) % catch avoids syntax error!
+    end,
+    foreach(Line in P) println(Line) end.
+
+input(1, M) =>
+    M = {"==882",
+         "+-261",
+         "==520",
+         "++919"}. /*
+        8=6+2
+6-5=1
+2=2+0
+1+8=9       CPU time 0.027 seconds, correct */
+input(2, M) =>
+    M = {"8-29*1",
+         "+1=515",
+         "=902/6",
+         "1=56=1"}. /*
+18=2*9
+9+6=15
+5=10/2
+11-5=6      CPU time 0.314 seconds, correct */
+input(3, M) =>
+    M = {"5822209",
+         "+1895++",
+         "+9680==",
+         "=5/6=*1"}. /*
+2*29=58
+9=8+0+1
+8+6=5+9
+60/12=5     CPU time 3.08 seconds, correct */
+input(4, M) =>
+    M = {"12980=58",
+         "+=*=-591",
+         "29065+29",
+         "*-+*=168"}. /*
+9+0*2=18
+20-9=5+6
+6*5=9+21
+56=8-1*8    CPU time 78.902 seconds, correct */

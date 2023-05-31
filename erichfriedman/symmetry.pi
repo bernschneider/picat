@@ -1,0 +1,52 @@
+/* Erich Friedman Symmetry
+https://erich-friedman.github.io/puzzle/symmetry/ */
+import util, cp.
+
+palindrome(L) => % ignoring the blank spaces
+    N = len(L),
+    Idx = new_list(N), Idx :: 0..N, % indices of non-blank spaces
+    L[1] #= 0 #=> Idx[1] #= 0,
+    L[1] #> 0 #=> Idx[1] #= 1,
+    foreach(I in 2..N)
+        L[I] #= 0 #=> Idx[I] #= Idx[I-1],    % if space is empty, copy previous index
+        L[I] #> 0 #=> Idx[I] #= Idx[I-1] + 1 % otherwise increment index
+    end,
+    Sidx #= Idx[N] + 1, % sum of paired indices (first and last, second and second last, ..)
+    foreach(I in 1..N-1, J in I+1..N)
+        % if the indices of two shapes are paired, the shapes must be equal:
+        (L[I] #> 0 #/\ L[J] #> 0 #/\ Idx[I] + Idx[J] #= Sidx) #=> L[I] #= L[J]
+    end.
+
+main(No) =>
+    input(No, M), N = len(M), M :: 0..3, Chr = " XOV",
+    foreach(L in M.rows() ++ M.columns()) palindrome(L) end,
+    solve(M), 
+    foreach(Z in 1..N, S in 1..N)
+		printf("%c|", Chr[1+M[Z,S]]),
+    	if S = N then nl end
+    end.
+
+input(0, M) =>
+    X=1, O=2, V=3, % square, circle, triangle  
+    M = {{_,_,_,V,X},
+         {_,_,_,X,_},
+         {O,O,O,_,O},
+         {_,V,V,_,O},
+         {_,_,X,_,_}}. /*
+ | |X|V|X|
+X|V|V|X| |
+O|O|O| |O|
+O|V|V|V|O|
+X| |X| |X|      CPU time 0.04 seconds, correct */
+input(1, M) =>
+    X=1, O=2, V=3, % square, circle, triangle  
+    M = {{_,_,_,_,_},
+         {V,_,X,_,_},
+         {V,V,V,V,_},
+         {_,_,_,X,O},
+         {_,_,O,_,O}}. /*
+O|X|O|X|O|
+V| |X|V| |
+V|V|V|V| |
+O|X|X|X|O|
+ | |O| |O|      CPU time 0.04 seconds, correct */

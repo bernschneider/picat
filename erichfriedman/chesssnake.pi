@@ -1,0 +1,90 @@
+/* Janko Erich Friedman Chess Snake
+https://erich-friedman.github.io/puzzle/snake/ */
+import sat.
+main(No) =>
+    input(No, Cs), N = len(Cs),
+    Vs = [{(Z,S),_} : Z in 1..N, S in 1..N, Cs[Z,S] = 0],   
+    Vmap = new_map(), foreach ({(Z,S),B} in Vs) Vmap.put({Z,S}, B) end,
+    Es = [{(Z,S),(Z1,S1),_} : {(Z,S),_} in Vs, {(Z1,S1),_} in Vs, abs(Z1-Z)+abs(S1-S)=1],
+    % The snake's path moves horizontally or vertically, and does not touch itself, even diagonally:
+    foreach(Z in 1..N, S in 1..N)  
+        Vmap.get({Z,S},0) + Vmap.get({Z,S+1},0) + Vmap.get({Z+1,S},0) + Vmap.get({Z+1,S+1},0) #< 4 
+    end,
+    path_d(Vs,Es,(N,1),(1,N)),
+    Ki=1, Qu=2, Ro=3, Bi=4, Kn=5, Chr = " @*+XL", % king, queen, rook, bishop, knight/Pferd
+    Attacks :: 0..N,
+    foreach(Z0 in 1..N, S0 in 1..N, Cs[Z0,S0] > 0) % count number of attacks from Z0|S0
+        I := 1, while(S0+I =< N, Cs[Z0,S0+I] = 0) I := I + 1 end, Right = [(Z0,S0+J) : J in 1..I-1], 
+        I := 1, while(S0-I > 0,  Cs[Z0,S0-I] = 0) I := I + 1 end, Left  = [(Z0,S0-J) : J in 1..I-1],
+        I := 1, while(Z0+I =< N, Cs[Z0+I,S0] = 0) I := I + 1 end, Down  = [(Z0+J,S0) : J in 1..I-1],
+        I := 1, while(Z0-I > 0,  Cs[Z0-I,S0] = 0) I := I + 1 end, Up    = [(Z0-J,S0) : J in 1..I-1],
+        I := 1, while(max(S0,Z0)+I =< N,   Cs[Z0+I,S0+I] = 0) I := I + 1 end, RD = [(Z0+J,S0+J) : J in 1..I-1], % Right Down
+        I := 1, while(Z0-I > 0, S0+I =< N, Cs[Z0-I,S0+I] = 0) I := I + 1 end, RU = [(Z0-J,S0+J) : J in 1..I-1], % Right Up
+        I := 1, while(S0-I > 0, Z0+I =< N, Cs[Z0+I,S0-I] = 0) I := I + 1 end, LD = [(Z0+J,S0-J) : J in 1..I-1], % Left Down
+        I := 1, while(min(S0,Z0)-I > 0,    Cs[Z0-I,S0-I] = 0) I := I + 1 end, LU = [(Z0-J,S0-J) : J in 1..I-1], % Left Up
+        if     Cs[Z0,S0] = Ki then L = [(Z,S) : Z in Z0-1..Z0+1, S in S0-1..S0+1, (Z,S)!=(Z0,S0), 0<Z, Z=<N, 0<S, S=<N]
+        elseif Cs[Z0,S0] = Ro then L =  Right ++ Left ++ Down ++ Up
+        elseif Cs[Z0,S0] = Bi then L =  RD ++ RU ++ LD ++ LU
+        elseif Cs[Z0,S0] = Qu then L =  Right ++ Left ++ Down ++ Up ++ RD ++ RU ++ LD ++ LU
+        elseif Cs[Z0,S0] = Kn then L = [(Z,S) : DZ in 1..2, FZ in [-1,1], FS in [-1,1], Z = Z0+FZ*DZ, S = S0+FS*(3-DZ), 0<Z, Z=<N, 0<S, S=<N]
+        end,
+        % printf("%c at %d|%d: %w%n", Chr[1+Cs[Z0,S0]], Z0, S0, L),
+        Attacks #= sum([Vmap.get({Z,S},0) : (Z,S) in L])
+    end,
+    solve([Attacks|values(Vmap)]), 
+    printf("%d attacks:%n", Attacks),
+    foreach(Z in 1..N, S in 1..N) 
+        printf("%c|", cond(Vmap.get({Z,S},0) = 1, 'o', Chr[1+Cs[Z,S]])), 
+        if S = N then nl end
+    end.
+
+input(1, Cs) =>
+    Ki=1, Qu=2, Ro=3, Bi=4, Kn=5, % King, Queen, Rook, Bishop, Knight/Pferd
+    Cs = {{ 0, 0, 0, 0, 0},
+          { 0,Ro, 0, 0, 0},
+          { 0, 0, 0, 0, 0},
+          { 0,Ki, 0, 0, 0},
+          { 0, 0, 0, 0, 0}}. /* 4 attacks:
+o|o|o| |o|
+o|+|o| |o|
+o| |o|o|o|
+o|@| | | |
+o| | | | |      CPU time 0.007 seconds, correct */
+input(2, Cs) =>
+    Ki=1, Qu=2, Ro=3, Bi=4, Kn=5, % King, Queen, Rook, Bishop, Knight/Pferd
+    Cs = {{ 0, 0, 0, 0, 0},
+          { 0, 0,Bi, 0, 0},
+          { 0, 0, 0, 0, 0},
+          { 0, 0, 0, 0, 0},
+          { 0,Kn, 0, 0, 0}}. /* 3 attacks:
+ | | | |o|
+ | |X| |o|
+o|o|o| |o|
+o| |o|o|o|
+o|L| | | |      CPU time 0.009 seconds, correct */
+input(3, Cs) =>
+    Ki=1, Qu=2, Ro=3, Bi=4, Kn=5, % King, Queen, Rook, Bishop, Knight/Pferd
+    Cs = {{Qu, 0, 0, 0, 0},
+          { 0, 0, 0, 0, 0},
+          { 0, 0, 0, 0, 0},
+          { 0, 0, 0, 0, 0},
+          { 0,Ro, 0, 0, 0}}. /* 4 attacks:
+*| | | |o|
+ |o|o|o|o|
+ |o| | | |
+o|o| | | |
+o|+| | | |      CPU time 0.01 seconds, correct */
+input(12, Cs) =>
+    Ki=1, Qu=2, Ro=3, Bi=4, Kn=5, % King, Queen, Rook, Bishop, Knight/Pferd
+    Cs = {{ 0, 0, 0, 0, 0, 0},
+          { 0, 0, 0, 0, 0, 0},
+          { 0, 0, 0, 0, 0, 0},
+          {Ro, 0, 0,Kn, 0, 0},
+          { 0, 0,Ki, 0, 0, 0},
+          { 0, 0, 0, 0, 0, 0}}. /* 4 attacks:
+o|o|o|o|o|o|
+o| | | | | |
+o|o|o|o|o|o|
++| | |L| |o|
+ | |@|o|o|o|
+o|o|o|o| | |        CPU time 0.014 seconds, correct */

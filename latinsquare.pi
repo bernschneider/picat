@@ -1,0 +1,37 @@
+/* Erich Friedman Latin Square
+https://erich-friedman.github.io/puzzle/latin/ */
+import sat, util.
+
+main(No) =>
+    input(No, Cs), N = len(Cs), 
+    M = new_array(N,N), M :: 0..1, 
+    % 1) no shaded squares are adjacent (including diagonally):
+    foreach(Z in 1..N-1, S in 1..N-1) 
+        M[Z,S] + M[Z,S+1] + M[Z+1,S] + M[Z+1,S+1] #=< 1
+    end,
+    % 2) there is exactly one shaded square in each row and in each column
+    foreach(L in M.rows() ++ M.columns()) sum(L) #= 1 end,
+    foreach(Z in 1..N, S in 1..N, Cs[Z,S] >= 0) 
+        % 3) no square containing a number can be shaded
+        M[Z,S] #= 0,
+        % 4) each number should be equal to the number of adjacent (including diagonally) shaded squares:
+        Cs[Z,S] #= sum([M[Z1,S1] : Z1 in Z-1..Z+1, S1 in S-1..S+1, (Z1,S1)!=(Z,S), 0<Z1, Z1=<N, 0<S1, S1=<N])
+    end,
+    solve(M), Chr = " X",
+    foreach(Z in 1..N, S in 1..N)
+		if Cs[Z,S] >= 0 then printf("%d|", Cs[Z,S]) else printf("%c|", Chr[1+M[Z,S]]) end,
+    	if S = N then nl end
+    end.
+
+input(1, Cs) =>
+    O = -1,  
+    Cs = {{O,O,O,2,O},
+          {O,O,O,O,O},
+          {O,O,O,O,O},
+          {O,O,O,O,O},
+          {O,1,O,O,O}}. /*
+ | |X|2| |
+ | | | |X|
+ |X| | | |
+ | | |X| |
+X|1| | | |      correct */

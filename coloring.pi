@@ -1,0 +1,35 @@
+/* Erich Friedman Coloring
+https://erich-friedman.github.io/puzzle/4colors/ */
+import sat.
+
+main(No) =>
+    input(No, M, Ar), N = len(M), M :: 1..4, Chr = "RGBY",
+    foreach(Z in 1..N, S in 1..N, Z1 in 1..N, S1 in 1..N, ((Z1=Z, S1=S+1); (S1=S, Z1=Z+1)))
+        if Ar[Z,S] = Ar[Z1,S1] then M[Z,S] #= M[Z1,S1] else M[Z,S] #!= M[Z1,S1] end
+    end,
+    solve(M), 
+    foreach(Z in 1..N, S in 1..N)
+		printf("%c|", Chr[M[Z,S]]),
+    	if S = N then nl end
+    end.
+
+input(1, M, Ar) =>
+    R=1, G=2, B=3, Y=4,  
+    M =  {{G,_,B,B,B,B}, % Colors
+          {_,_,_,_,_, _},
+          {G,_,_,_,G,G},
+          {G,_,_,_,G, _},
+          {R,R,_,_,_, _},
+          {R,_,_,_,_,Y}},
+    Ar = {{a,e,h,h,h,h}, % areas
+          {b,b,b,i,l,o},
+          {c,f,i,i,m,m},
+          {c,g,g,j,m,p},
+          {d,d,g,j,n,p},
+          {d,g,g,k,n,q}}. /*
+G|R|B|B|B|B|
+Y|Y|Y|R|Y|R|
+G|B|R|R|G|G|
+G|Y|Y|B|G|B|
+R|R|Y|B|R|B|
+R|Y|Y|G|R|Y| correct */

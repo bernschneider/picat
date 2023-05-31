@@ -1,0 +1,31 @@
+/* Erich Friedman Tic-Tac-Toe
+https://erich-friedman.github.io/puzzle/tic/ */
+import sat, util.
+
+main(No) =>
+    input(No, M), N = len(M), M :: 0..2,
+    foreach(Z in 1..N, S in 1..N, var(M[Z,S])) M[Z,S] #> 0 end,
+    % avoid 3 adjacent X's or O's horizontally, vertically, or diagonally:
+    D1 = [[M[Z,S-Z] : Z in 1..N, 0<S-Z, S-Z=<N] : S in 2..N+N],  % diagonals /
+    D2 = [[M[Z,D+Z] : Z in 1..N, 0<D+Z, D+Z=<N] : D in -N+1..N], % diagonals \
+    foreach(L in M.rows() ++ M.columns() ++ D1 ++ D2, I in 1..len(L)-2)
+		L[I] #= L[I+1] #=> L[I+2] #!= L[I]
+    end,
+    solve(M), Chr = " XO",
+    foreach(Z in 1..N, S in 1..N)
+		printf("%c|", Chr[1+M[Z,S]]),
+    	if S = N then nl end
+    end.
+
+input(0, M) =>
+    X=1, O=2, B=0, % B = Black  
+    M = {{X,_,_,O,_},
+         {_,_,_,_,_},
+         {B,X,_,B,_},
+         {_,_,_,_,_},
+         {_,O,O,_,_}}. /*
+X|O|X|O|O|
+X|O|O|X|X|
+ |X|X| |O|
+X|O|O|X|X|
+X|O|O|X|O|      correct */

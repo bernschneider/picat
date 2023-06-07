@@ -1,28 +1,48 @@
 /* Erich Friedman Gap
 https://erich-friedman.github.io/puzzle/gap/ */
-import cp, util.
-main(No) =>
+import sat, util.
+main ?=>
+    member(No, [1,2,3,7,8,9,10]),
     input(No, GapZ, GapS), N = len(GapZ), 
     M = new_array(N,N), M :: 0..1,
-    % there are two shaded squares in every row and column:
-    foreach(L in rows(M) ++ columns(M)) sum(L) #= 2 end,
     % shaded squares do not touch, even at corners:
     foreach(Z in 1..N-1, S in 1..N-1) M[Z,S] + M[Z,S+1] + M[Z+1,S] + M[Z+1,S+1] #< 2 end, 
-    % the numbers on the side of the grid indicate the number of white squares between the shaded squares in that row or column:
     foreach({Gap,L} in zip(GapZ ++ GapS, M.rows() ++ M.columns()))
+        % there are two shaded squares in every row and column::
+        sum(L) #= 2,
+        % the numbers on the side of the grid indicate the number of white squares between the shaded squares in that row or column:
         Idx = [I1, I2], Idx :: 1..N, 
         I1 + Gap + 1 #= I2,
         element(I1, L, 1), element(I2, L, 1)
     end,
-    solve([ff,down], M), Chr = " X", 
+    solve(M), Chr = " X", 
     foreach(Z in 1..N, S in 1..N)
       printf("%c|", Chr[1+M[Z,S]]),
       if S = N then nl end
-    end.
+    end,
+    nl, fail.
 
-input(0, GapZ, GapS) =>
-    GapZ = [_,_,_,_,_,_,_,_,4],
-    GapS = [_,_,4,_,_,_,_,_,_]. /*	 
+input(1, H, V) =>
+H = [_,_,_,_,_,_,_,_,4],
+V = [_,_,4,_,_,_,_,_,_]. 
+input(2, H, V) =>
+H = [_,_,_,_,_,_,_,4,_],
+V = [_,5,_,_,_,_,_,_,_].
+input(3, H, V) =>
+H = [_,_,_,_,_,_,_,4,_],
+V = [_,_,5,_,_,_,_,_,_].
+input(7, H, V) =>
+H = [_,_,_,_,_,3,_,_,_],
+V = [_,4,_,_,_,_,_,_,_].
+input(8, H, V) =>
+H = [_,_,_,_,_,_,3,_,2,_],
+V = [_,_,_,5,_,_,_,_,_,_].
+input(9, H, V) =>
+H = [_,_,_,_,_,_,4,_,2,_],
+V = [6,_,_,_,_,_,_,_,_,_].
+input(10, H, V) =>
+H = [_,_,_,_,_,_,7,_,2,_],
+V = [_,_,4,_,_,_,_,_,_,_]. /*
  | | |X| |X| | | |
  |X| | | | | | |X|
  | | | |X| |X| | |
@@ -31,4 +51,67 @@ X| |X| | | | | | |
  |X| |X| | | | | |
  | | | | | |X| |X|
 X| | | |X| | | | |
- | |X| | | | |X| |      CPU time 0.019 seconds, correct */
+ | |X| | | | |X| |
+
+ | | | | |X| |X| |
+ |X| |X| | | | | |
+ | | | | |X| |X| |
+X| |X| | | | | | |
+ | | | |X| |X| | |
+X| |X| | | | | | |
+ | | | |X| | | |X|
+ |X| | | | |X| | |
+ | | |X| | | | |X|
+
+ |X| | |X| | | | |
+ | | | | | |X| |X|
+ | |X| |X| | | | |
+X| | | | | |X| | |
+ | | |X| | | | |X|
+ |X| | | |X| | | |
+ | | |X| | | |X| |
+X| | | | |X| | | |
+ | |X| | | | |X| |
+
+ |X| | |X| | | | |
+ | | | | | |X| |X|
+ | |X| |X| | | | |
+X| | | | | |X| | |
+ | | |X| | | | |X|
+ |X| | | |X| | | |
+ | | |X| | | |X| |
+X| | | | |X| | | |
+ | |X| | | | |X| |
+
+ | | |X| |X| | | | |
+ |X| | | | | | |X| |
+ | | | |X| |X| | | |
+ | |X| | | | | |X| |
+ | | | |X| |X| | | |
+ |X| | | | | | | |X|
+ | | |X| | | |X| | |
+X| | | | | | | | |X|
+ | |X| | |X| | | | |
+X| | | | | | |X| | |
+
+X| | | | | | | |X| |
+ | | |X| | |X| | | |
+ |X| | | | | | |X| |
+ | | |X| |X| | | | |
+ |X| | | | | |X| | |
+ | | | | |X| | | |X|
+ | |X| | | | |X| | |
+X| | | |X| | | | | |
+ | | | | | |X| | |X|
+ | |X| |X| | | | | |
+
+ | | | | | |X| |X| |
+X| | | |X| | | | | |
+ | |X| | | | |X| | |
+ | | | | |X| | | |X|
+ |X| | | | | |X| | |
+ | | |X| |X| | | | |
+X| | | | | | | |X| |
+ | |X| |X| | | | | |
+ | | | | | |X| | |X|
+ |X| |X| | | | | | |        CPU time 0.11 seconds. */

@@ -1,0 +1,40 @@
+/* Adria Groza: Puzzle 127 "The 12 pentominos" */
+import sat, util, matrixP. % matrix generates the pentominos and their symmetries
+
+main(NR,NC) =>
+    generate(P), % P[1] = Pentomino X, P[2] = I, P[3] = Z, and so on U, V, P, W, T, F, Y, N, L (from module matrixP)
+    % Number of possible pentomino placements:
+    Max = sum([max(0,(NC+1-NCp)*(NR+1-NRp)) : I in 1..12, J in 1..len(P[I]), NRp = len(P[I,J]), NCp = len(P[I,J,1])]), 
+    M = new_array(Max), % Exact Cover matrix
+    Idx = 0, 
+    foreach(I in 1..12, J in 1..len(P[I]), NRp = len(P[I,J]), NCp = len(P[I,J,1]), C0 in 0..NC-NCp, R0 in 0..NR-NRp)
+        Line = {0 : _ in 1..72}, % col 1..12 = number of pentomino, col 13..72 flattended 3x20 grid
+        Line[I] := 1, % mark the pentomino number at the respective column
+        % Copy the J-th symmetry variant of pentomino I into the flattened grid "Line":
+        foreach(Rp in 1..NRp, Cp in 1..NCp, P[I,J,Rp,Cp] = 1)  Line[12+(R0+Rp-1)*NC+C0+Cp] := 1 end,
+        Idx := Idx + 1, 
+        M[Idx] = Line % copy Line into Exact Cover matrix M 
+    end, 
+    Select = new_array(Max), Select :: 0..1, sum(Select) #= 12, % select 12 lines, one for each of the 12 pentominos
+    foreach(Col in M.columns()) scalar_product(Select, Col, 1) end, % this selection is an Exact Cover!
+    solve(Select), 
+    % Compute Grid matrix for print-out:
+    Grid = new_array(NR,NC), Chr = "XIZUVPWTFYNL", 
+    foreach(T in 1..Max, Select[T] = 1, I = find_first_of(M[T], 1), R in 1..NR, C in 1..NC, M[T,12+(R-1)*NC+C] = 1)
+        Grid[R,C] = I
+    end,
+    foreach(R in 1..NR, C in 1..NC)
+		printf("%c|", Chr[Grid[R,C]]),
+    	if C = NC then nl end
+    end. /* main(3,20):
+V|L|L|L|L|F|T|T|T|W|W|Z|I|I|I|I|I|X|U|U|
+V|L|N|N|F|F|F|T|W|W|Y|Z|Z|Z|P|P|X|X|X|U|
+V|V|V|N|N|N|F|T|W|Y|Y|Y|Y|Z|P|P|P|X|U|U|           CPU time 1.141 seconds, correct 
+
+main(6,10): 
+I|I|I|I|I|Z|Y|Y|Y|Y|
+U|U|U|Z|Z|Z|P|P|Y|W|
+U|F|U|Z|X|P|P|P|W|W|
+F|F|F|X|X|X|V|W|W|T|
+F|N|N|N|X|L|V|T|T|T|
+N|N|L|L|L|L|V|V|V|T|                                CPU time 1.682 seconds, correct */

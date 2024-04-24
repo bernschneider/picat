@@ -13,7 +13,7 @@ main(Chr, NR,NC) =>
     Np = len(P),
     % Number of possible pentomino placements:
     Ms = [sum([max(0,(NC+1-NCp)*(NR+1-NRp)) : J in 1..len(P[I]), NRp = len(P[I,J]), NCp = len(P[I,J,1])]) : I in 1..Np],     
-    Start = new_array(1+Np), Start[1] #= 0,
+    Start = new_array(1+Np), Start[1] = 0,
     foreach(I in 1..Np) Start[1+I] := Start[I] + Ms[I] end,  
     Max = sum(Ms), % println(max=Max), foreach({C,X} in zip(Chr,Ms)) printf("%c: %d%n", C, X) end,
     M = new_array(Max), % Exact Cover matrix

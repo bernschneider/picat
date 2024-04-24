@@ -1,0 +1,79 @@
+/* Adrian Groza Puzzles
+This modification of 127the12pentominos.pi also covers Groza puzzles 128 and 129.
+Some cases of puzzle 127 perform better compared to 127the12pentominos.pi.
+Puzzle 127: The 12 pentonminos
+Puzzle 128: Importing six pentominoes
+Puzzle 129. Importing other six pentominoes */
+import sat, util, matrixP_. % matrixP_ generates the pentominons and their symmetries
+main =>
+    time(main("XIZUVPWTFYNL",3,20)).
+
+main(Chr, NR,NC) =>
+    generate(Chr, P), % P[1] = Pentomino X, P[2] = I, P[3] = Z, and so on U, V, P, W, T, F, Y, N, L (from module matrixP)
+    Np = len(P),
+    % Number of possible pentomino placements:
+    Ms = [sum([max(0,(NC+1-NCp)*(NR+1-NRp)) : J in 1..len(P[I]), NRp = len(P[I,J]), NCp = len(P[I,J,1])]) : I in 1..Np],     
+    Start = new_array(1+Np), Start[1] #= 0,
+    foreach(I in 1..Np) Start[1+I] := Start[I] + Ms[I] end,  
+    Max = sum(Ms), % println(max=Max), foreach({C,X} in zip(Chr,Ms)) printf("%c: %d%n", C, X) end,
+    M = new_array(Max), % Exact Cover matrix
+    Idx = 0, 
+    foreach(I in 1..Np, J in 1..len(P[I]), NRp = len(P[I,J]), NCp = len(P[I,J,1]), C0 in 0..NC-NCp, R0 in 0..NR-NRp)
+        Line = {0 : _ in 1..Np+NR*NC}, % col 1..Np = number of pentomino, col 13..72 flattended grid
+        Line[I] := 1, % mark the pentomino number at the respective column
+        % Copy the J-th symmetry variant of pentomino I into the flattened grid "Line":
+        foreach(Rp in 1..NRp, Cp in 1..NCp, P[I,J,Rp,Cp] = 1)  Line[Np+(R0+Rp-1)*NC+C0+Cp] := 1 end,
+        Idx := Idx + 1, M[Idx] = Line % include Line to the Exact Cover matrix M 
+    end, 
+    Select = new_array(Max), Select :: 0..1, % sum(Select) #= Np, % select Np lines, one for each pentomino
+    foreach(I in 1..Np) sum(Select[Start[I]+1..Start[I+1]]) #= 1 end, % redundant, but often increasing performance
+    foreach(Col in M.columns()) scalar_product(Select, Col, 1) end, % this selection is an Exact Cover!
+    solve(Select), 
+    % Compute print-out grid:
+    Grid = new_array(NR,NC), 
+    foreach(T in 1..Max, Select[T] = 1, I = find_first_of(M[T], 1), R in 1..NR, C in 1..NC, M[T,Np+(R-1)*NC+C] = 1)
+        Grid[R,C] = I
+    end,
+    foreach(R in 1..NR, C in 1..NC)
+		printf("%c|", Chr[Grid[R,C]]),
+    	if C = NC then nl end
+    end. /*  
+time(main("XIZUVPWTFYNL",3,20)):
+V|L|L|L|L|F|T|T|T|W|W|Z|I|I|I|I|I|X|U|U|
+V|L|N|N|F|F|F|T|W|W|Y|Z|Z|Z|P|P|X|X|X|U|
+V|V|V|N|N|N|F|T|W|Y|Y|Y|Y|Z|P|P|P|X|U|U|           CPU time 1.046 seconds, correct 
+
+time(main("XIZUVPWTFYNL",4,15)):
+L|L|L|L|F|F|I|I|I|I|I|N|N|N|P|
+U|U|X|L|T|F|F|W|W|Z|N|N|V|P|P|
+U|X|X|X|T|F|W|W|Y|Z|Z|Z|V|P|P|
+U|U|X|T|T|T|W|Y|Y|Y|Y|Z|V|V|V|                      CPU time 0.712 seconds, correct
+
+time(main("XIZUVPWTFYNL",5,12)):
+U|U|X|I|I|I|I|I|F|V|V|V|
+U|X|X|X|P|P|P|F|F|Z|Z|V|
+U|U|X|Y|P|P|W|T|F|F|Z|V|
+L|Y|Y|Y|Y|W|W|T|N|N|Z|Z|
+L|L|L|L|W|W|T|T|T|N|N|N|                            CPU time 0.629 seconds, correct
+
+time(main("XIZUVPWTFYNL",6,10)): 
+I|I|I|I|I|Z|Y|Y|Y|Y|
+U|U|U|Z|Z|Z|P|P|Y|W|
+U|F|U|Z|X|P|P|P|W|W|
+F|F|F|X|X|X|V|W|W|T|
+F|N|N|N|X|L|V|T|T|T|
+N|N|L|L|L|L|V|V|V|T|                                CPU time 0.788 seconds, correct
+
+Puzzle 128: time(main("TWYZIL",5,6))       
+Y|L|L|L|L|W|
+Y|L|Z|Z|W|W|
+Y|Y|Z|W|W|T|
+Y|Z|Z|T|T|T|
+I|I|I|I|I|T|                                        CPU time 0.038 seconds, correct
+
+Puzzle 129: time(main("UVXFPN",5,6)) 
+U|U|X|V|V|V|
+U|X|X|X|F|V|
+U|U|X|F|F|V|
+P|P|N|N|F|F|
+P|P|P|N|N|N|                                        CPU time 0.021 seconds correct */

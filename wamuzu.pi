@@ -1,0 +1,88 @@
+/* Janko Wamuzu - version based on undirected graph Vs/ES and acyclic/2
+https://www.janko.at/Raetsel/Wamuzu/index.htm */
+import sat, util.
+
+main(No) =>
+    input(No, Str), 
+    Cs = [[cond(Chr="-", 0, 1) : Chr in split(Line)] : Line in Str.split("\n")], N = len(Cs), 
+    Vs = [{(R,C), 1} : R in 1..N, C in 1..N], % All cells must be visited by a path exactly once ..
+    Es = [{(R,C), (R1,C1), _} : R in 1..N, C in 1..N, R1 in 1..N, C1 in 1..N, abs(R1 - R) + abs(C1 - C) = 1], 
+    acyclic(Vs, Es), % the graph must not contain any cycles
+    EMap = new_map(), foreach ({(Zv,Sv),(R,C),B} in Es) EMap.put({Zv,Sv,R,C}, B) end,
+    % Connect each two circles with a path:
+    foreach(R in 1..N, C in 1..N)
+        2 #= Cs[R,C] + sum([EMap.get({R,C,Rn,Cn}, 0) : (Rn,Cn) in [(R-1,C),(R,C-1),(R,C+1),(R+1,C)]])
+    end,
+    % All sections of a path must be of length 1, i.e. a path must bend by 90° in each cell:
+    foreach({(Rp,Cp), (R,C), B} in Es, Cs[R,C] = 0)
+        DR = R - Rp, DC = C - Cp, 
+        B #= 1 #=> EMap.get({R,C,R+DC,C+DR}, 0) + EMap.get({R,C,R-DC,C-DR}, 0) #= 1
+    end,
+    solve(vars(Es) ++ values(EMap)), 
+    SGrid = "+o", SHor = " -", SVer = " |",
+    foreach (R in 1..N-1)
+        foreach (C in 1..N-1) printf( "%c%c", SGrid[1+Cs[R,C]], SHor[1 + EMap.get({R,C, R,C+1}, 0)]) end, println(SGrid[1+Cs[R,N]]),
+        foreach (C in 1..N)   printf( "%c ",                    SVer[1 + EMap.get({R,C, R+1,C}, 0)]) end, nl
+    end,
+    foreach (C in 1..N-1)     printf( "%c%c", SGrid[1+Cs[N,C]], SHor[1 + EMap.get({N,C, N,C+1}, 0)])end, println(SGrid[1+Cs[N,N]]). 
+
+input(1, Str) =>
+    Str = "- x x x x -
+x - - - - x
+x - - - - x
+- - - - - -
+- - - - - x
+- x x x x x". /* 
++-o o o o-+
+|   | |   | 
+o +-+ +-+ o
+  |     |   
+o +-+ +-+ o
+|   | |   | 
++-+ +-+ +-+
+  |     |   
++-+ +-+ +-o
+|   | |     
++-o o o o-o                                 CPU time 0.018 seconds, correct */
+input(17, Str) =>
+    Str = "- - - x - - x - x x - - x -
+x - - - - - - - - - - - - x
+- - x - - - x x - - - x - -
+x - - x - - - - x - - - - x
+x x x - - x - - - - - - - -
+- - - x - - - - - - - x - -
+x - - x - - - - - - - x - -
+x - - x - - x - - x - - x x
+- - - - x - - - - - - x - -
+- - x - - x x - - - - - - -
+x - - - x x - - - - - x - -
+- - - x - x - - x - - - - -
+x - - x x - - - - - x - - x
+x x x - - - - - - - x - x -". /*
++-+ +-o +-+ o +-o o +-+ o-+
+| | |   | | | |   | | |   | 
+o +-+ +-+ +-+ +-+ +-+ +-+ o
+      |         |       |   
++-+ o +-+ +-o o +-+ +-o +-+
+| | |   | |   |   | |     | 
+o +-+ o +-+ +-+ o +-+ +-+ o
+      |     |   |     | |   
+o o-o +-+ o +-+ +-+ +-+ +-+
+|       | |   |   | |     | 
++-+ +-o +-+ +-+ +-+ +-o +-+
+  | |       |   |       |   
+o +-+ o-+ +-+ +-+ +-+ o +-+
+|       | |   |   | | |   | 
+o +-+ o +-+ o +-+ o +-+ o o
+  | | |     |   |       |   
++-+ +-+ o +-+ +-+ +-+ o +-+
+|       | |   |   | | |   | 
++-+ o +-+ o o-+ +-+ +-+ +-+
+  | | |         |       |   
+o-+ +-+ o o-+ +-+ +-+ o +-+
+        |   | |   | | |   | 
++-+ +-o +-o +-+ o-+ +-+ +-+
+| | |                   |   
+o +-+ o o +-+ +-+ +-o +-+ o
+      | | | | | | |   |   | 
+o-o o-+ +-+ +-+ +-+ o-+ o-+                 CPU time 0.08 seconds, correct */

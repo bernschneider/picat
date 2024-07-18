@@ -1,4 +1,4 @@
-/* Dell Logic Puzzles: Seeing Triple
+* Dell Logic Puzzles: Seeing Triple
 https://groups.google.com/g/picat-lang/c/sKrIVx85jfo
 We have five sets of triplets. Can you match up each set of triplets with their age and home state? */
 import cp.
@@ -34,7 +34,7 @@ main ?=>
     % 3. Jane is two years younger than Boris and two years older than Nan (who isn't related to Ray).
     P2T[11] + 1 #= P2T[1], P2T[11] - 1 #= P2T[15], P2T[15] #!= P2T[6], 
     % 4. Lois (who has both a brother and a sister) is two years younger than Keri, who is two years younger than the triplets from Connecticut.
-    P2M[13] #= 1, P2T[13] + 1 #= P2T[12], Idx #= P2T[12] + 1, element(Idx, T2S, 2), 
+    P2M[13] #= 1, P2T[13] + 1 #= P2T[12], P2T[12] + 1 #= S2T[2], 
     % 5. The Delaware triplets don't include Ray (who isn't Lois's brother).
     P2S[6] #!= 3, P2T[6] #!= P2T[13],
     % 6. The triplets from Arizona consist of two sisters and a brother.
@@ -62,4 +62,4 @@ main ?=>
 29, Arizona, [Keri,Nan,Clay]
 31, Connecticut, [Jane,Melissa,Morris]
 33, Delaware, [Faye,Boris,Dan]
-CPU time 0.012 seconds, no more solutions, correct */
+CPU time 0.005 seconds, no more solutions, correct */

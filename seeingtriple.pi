@@ -1,0 +1,65 @@
+/* Dell Logic Puzzles: Seeing Triple
+https://groups.google.com/g/picat-lang/c/sKrIVx85jfo
+We have five sets of triplets. Can you match up each set of triplets with their age and home state? */
+import cp.
+
+main ?=>
+            %   1        2      3       4         5       6       7
+    Man =   ["Boris", "Clay", "Dan", "Morris", "Perry", "Ray", "Wayne"], Men = len(Man), 
+    %          8       9       10      11      12      13       14        15
+    Woman = ["Ann", "Doris", "Faye", "Jane", "Keri", "Lois", "Melissa", "Nan"], 
+    Person = Man ++ Woman, N = len(Person),
+    %             1           2             3          4         5
+    State = ["Arizona", "Connecticut", "Delaware", "Florida", "Maine"],
+    %      1   2   3   4   5
+    Age = [25, 27, 29, 31, 33],
+    % Each siblings triplet has a different age. We use the age index as triplet id:
+    T2S = new_list(5), T2S :: 1..5, assignment(T2S, S2T), % Triplet <-> State (Each set of triplets comes from a different state)
+    T2M = new_list(5), T2M :: 1..2, % Triplet -> number of males (No set of triplets consists of three siblings of the same gender)
+    P2T = new_list(N), P2T :: 1..5, % Person -> Triplet
+    foreach(T in 1..5) 
+        count(T, P2T, 3), % each triplet has three persons
+        count(T, P2T[1..Men], T2M[T]) % count no. of males in triplet
+    end,
+    % Compute state and no. of males in triplet by person:
+    P2S = new_list(N), P2S :: 1..5, % Person -> State
+    P2M = new_list(N), P2M :: 1..2, % Person -> no. of males in person´s triplet
+    foreach(P in 1..N, T in 1..5) 
+        P2T[P] #= T #=> (P2S[P] #= T2S[T] #/\ P2M[P] #= T2M[T])
+    end,
+    % 1. Wayne and his brother are not 33 years old.
+    P2M[7] #= 2, P2T[7] #!= 5,
+    % 2. Dan is not related to Melissa or to Nan.
+    P2T[3] #!= P2T[14], P2T[3] #!= P2T[15], 
+    % 3. Jane is two years younger than Boris and two years older than Nan (who isn't related to Ray).
+    P2T[11] + 1 #= P2T[1], P2T[11] - 1 #= P2T[15], P2T[15] #!= P2T[6], 
+    % 4. Lois (who has both a brother and a sister) is two years younger than Keri, who is two years younger than the triplets from Connecticut.
+    P2M[13] #= 1, P2T[13] + 1 #= P2T[12], Idx #= P2T[12] + 1, element(Idx, T2S, 2), 
+    % 5. The Delaware triplets don't include Ray (who isn't Lois's brother).
+    P2S[6] #!= 3, P2T[6] #!= P2T[13],
+    % 6. The triplets from Arizona consist of two sisters and a brother.
+    element(S2T[1], T2M, 1),
+    % 7. Boris's brother isn't Perry (who isn't related to Keri).
+    P2T[1] #!= P2T[5], P2T[5] #!= P2T[12], 
+    % 8. Doris (who isn't related to Nan) lives in Maine.
+    P2T[9] #!= P2T[15], P2S[9] #= 5, 
+    % 9. Two brothers hail from Florida, but they don't include Boris (who isn't related to Doris).
+    element(S2T[4], T2M, 2), P2S[1] #!= 4, P2T[1] #!= P2T[9],
+    % 10. Nan's only brother isn't Morris.
+    P2M[15] #= 1, P2T[15] #!= P2T[4], 
+    % 11. Morris and his two sisters live in Connecticut.
+    P2M[4] #= 1, P2S[4] #= 2, 
+    % 12. Ann and her siblings are younger than at least two other sets of triplets.
+    P2T[8] #=< 3,
+    % 13. Doris and her siblings are not the youngest triplets.
+    P2T[9] #> 1,
+    solve(T2S ++ S2T ++ T2M ++ P2T ++ P2S ++ P2M), 
+    foreach(T in 1..5) 
+    printf("%d, %s, %w%n", Age[T], State[T2S[T]], [Person[P] : P in Men+1..N ++ 1..Men, P2T[P] = T] ) % first list woman, then men ;)
+    end, nl, fail. /*
+25, Florida, [Ann,Ray,Wayne]
+27, Maine, [Doris,Lois,Perry]
+29, Arizona, [Keri,Nan,Clay]
+31, Connecticut, [Jane,Melissa,Morris]
+33, Delaware, [Faye,Boris,Dan]
+CPU time 0.012 seconds, no more solutions, correct */
